@@ -7,11 +7,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            secondary: '#10b981',
+            accent: '#8b5cf6',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            dark: '#1f2937',
+          }
+        }
+      }
+    }
+  </script>
   <style>
     body {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -236,10 +247,10 @@
       <h2 class="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h2>
       
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">Usuario (Correo)</label>
+        <label class="block text-sm font-medium text-gray-700">Usuario</label>
         <div class="relative">
-          <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-          <input type="email" id="username" placeholder="Ingrese su correo" required 
+          <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          <input type="text" id="username" placeholder="Ingrese su usuario" required 
                  class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
       </div>
@@ -345,12 +356,12 @@
         <div>
           <label class="block font-semibold text-gray-700 mb-2">Cantidad</label>
           <div class="flex">
-            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg hover:bg-gray-300">
+            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg">
               <i class="fas fa-minus"></i>
             </button>
             <input type="number" id="item-quantity" min="1" value="1" 
                    class="w-full p-2 border-y border-gray-300 text-center focus:outline-none">
-            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg hover:bg-gray-300">
+            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg">
               <i class="fas fa-plus"></i>
             </button>
           </div>
@@ -559,9 +570,6 @@
           <button id="clear-filter" class="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 flex items-center">
             <i class="fas fa-undo mr-2"></i> Limpiar
           </button>
-          <button id="sync-firebase-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
-            <i class="fas fa-sync-alt mr-2"></i> Sincronizar
-          </button>
         </div>
       </div>
       
@@ -703,118 +711,26 @@
 
   <script>
   (() => {
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyDjlI3qysLRd41TW3QTImB2XvdrhZ6PV8g",
-      authDomain: "contador-214a3.firebaseapp.com",
-      projectId: "contador-214a3",
-      storageBucket: "contador-214a3.firebasestorage.app",
-      messagingSenderId: "909890810354",
-      appId: "1:909890810354:web:007e7efd4281b25356bb6b"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
     // Variables y DOM
     const users = { 
-      // Credenciales con correos ficticios y contraseñas aleatorias
-      'admin@accesorios.com': { 
-        password: 'AdminSecure123!', 
-        stores: ['all'],
-        displayName: 'Admin'
-      },
-      'tienda506@accesorios.com': { 
-        password: 'T5062263', 
-        stores: ['506'],
-        displayName: '506-1'
-      },
-      'tienda506-2@accesorios.com': { 
-        password: 'T5062263*', 
-        stores: ['506'],
-        displayName: '506-2'
-      },
-      'centro1@accesorios.com': { 
-        password: 'Centro1Pass456$', 
-        stores: ['centro'],
-        displayName: 'Centro 1'
-      },
-      'centro2@accesorios.com': { 
-        password: 'Centro2Secure789#', 
-        stores: ['centro'],
-        displayName: 'Centro 2'
-      },
-      'pavas1@accesorios.com': { 
-        password: 'Pavas1Acc123$', 
-        stores: ['pavas'],
-        displayName: 'Pavas 1'
-      },
-      'pavas2@accesorios.com': { 
-        password: 'Pavas2Vent456#', 
-        stores: ['pavas'],
-        displayName: 'Pavas 2'
-      },
-      'terramall1@accesorios.com': { 
-        password: 'TerraMall1!789', 
-        stores: ['terramall'],
-        displayName: 'Terramall 1'
-      },
-      'terramall2@accesorios.com': { 
-        password: 'TerraMall2$012', 
-        stores: ['terramall'],
-        displayName: 'Terramall 2'
-      },
-      'escazu1@accesorios.com': { 
-        password: 'Escazu1Acc345#', 
-        stores: ['escazu'],
-        displayName: 'Escazú 1'
-      },
-      'escazu2@accesorios.com': { 
-        password: 'Escazu2Vent678!', 
-        stores: ['escazu'],
-        displayName: 'Escazú 2'
-      },
-      'hot1@accesorios.com': { 
-        password: 'Hot1Store901$', 
-        stores: ['hot'],
-        displayName: 'Hot 1'
-      },
-      'hot2@accesorios.com': { 
-        password: 'Hot2Tienda234#', 
-        stores: ['hot'],
-        displayName: 'Hot 2'
-      },
-      'desamparados1@accesorios.com': { 
-        password: 'Desampa1Acc567!', 
-        stores: ['desamparados'],
-        displayName: 'Desamparados 1'
-      },
-      'desamparados2@accesorios.com': { 
-        password: 'Desampa2Vent890$', 
-        stores: ['desamparados'],
-        displayName: 'Desamparados 2'
-      },
-      'canonazo1@accesorios.com': { 
-        password: 'Canonazo1Acc123#', 
-        stores: ['canonazo'],
-        displayName: 'Cañonazo 1'
-      },
-      'canonazo2@accesorios.com': { 
-        password: 'Canonazo2Vent456!', 
-        stores: ['canonazo'],
-        displayName: 'Cañonazo 2'
-      },
-      'sabanilla1@accesorios.com': { 
-        password: 'Sabanilla1Acc789$', 
-        stores: ['sabanilla'],
-        displayName: 'Sabanilla 1'
-      },
-      'sabanilla2@accesorios.com': { 
-        password: 'Sabanilla2Vent012#', 
-        stores: ['sabanilla'],
-        displayName: 'Sabanilla 2'
-      }
+      // Credenciales por tienda (máximo 2 usuarios por tienda + admin)
+      admin: { password: 'admin123', stores: ['all'] },
+      centro1: { password: 'centro123', stores: ['centro'] },
+      centro2: { password: 'centro456', stores: ['centro'] },
+      pavas1: { password: 'pavas123', stores: ['pavas'] },
+      pavas2: { password: 'pavas456', stores: ['pavas'] },
+      terramall1: { password: 'terramall123', stores: ['terramall'] },
+      terramall2: { password: 'terramall456', stores: ['terramall'] },
+      escazu1: { password: 'escazu123', stores: ['escazu'] },
+      escazu2: { password: 'escazu456', stores: ['escazu'] },
+      hot1: { password: 'hot123', stores: ['hot'] },
+      hot2: { password: 'hot456', stores: ['hot'] },
+      desamparados1: { password: 'desamparados123', stores: ['desamparados'] },
+      desamparados2: { password: 'desamparados456', stores: ['desamparados'] },
+      canonazo1: { password: 'canonazo123', stores: ['canonazo'] },
+      canonazo2: { password: 'canonazo456', stores: ['canonazo'] },
+      sabanilla1: { password: 'sabanilla123', stores: ['sabanilla'] },
+      sabanilla2: { password: 'sabanilla456', stores: ['sabanilla'] }
     };
     
     const loginForm      = document.getElementById('login-form');
@@ -839,10 +755,8 @@
     const startDateInput = document.getElementById('start-date');
     const endDateInput   = document.getElementById('end-date');
     const storeFilter    = document.getElementById('store-filter');
-    const storeFilterContainer = document.getElementById('store-filter-container');
     const applyFilterBtn = document.getElementById('apply-filter');
     const clearFilterBtn = document.getElementById('clear-filter');
-    const syncFirebaseBtn = document.getElementById('sync-firebase-btn');
     const toast          = document.getElementById('toast');
     const toastMessage   = document.getElementById('toast-message');
     const adminPanelBtn  = document.getElementById('admin-panel-btn');
@@ -921,59 +835,7 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // Funciones Firebase
-    async function backupSaleToFirebase(sale) {
-      try {
-        await db.collection('ventas').add({
-          ...sale,
-          backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log("Venta respaldada en Firebase");
-      } catch (error) {
-        console.error("Error al respaldar venta:", error);
-      }
-    }
-
-    async function getSalesFromFirebase(store = 'all', startDate, endDate) {
-      try {
-        let query = db.collection('ventas')
-          .where('timestamp', '>=', startDate.toISOString())
-          .where('timestamp', '<=', endDate.toISOString())
-          .orderBy('timestamp', 'desc');
-
-        if (store !== 'all') {
-          query = query.where('store', '==', store);
-        }
-
-        const snapshot = await query.get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      } catch (error) {
-        console.error("Error al obtener ventas:", error);
-        return [];
-      }
-    }
-
-    async function syncAllSalesToFirebase() {
-      if (!isMasterUser) return;
-      
-      try {
-        let total = 0;
-        
-        for (const [store, storeData] of Object.entries(salesData)) {
-          for (const sale of storeData.sales) {
-            await backupSaleToFirebase(sale);
-            total++;
-          }
-        }
-        
-        showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
-      } catch (error) {
-        showToast('Error al sincronizar ventas', 'error');
-        console.error("Error:", error);
-      }
-    }
-
-    // Almacenamiento local
+    // Almacenamiento
     function getLocalStorageData() {
       const data = localStorage.getItem('salesData');
       return data ? JSON.parse(data) : {};
@@ -1044,7 +906,7 @@
       }
       localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
       
-      showToast(`Bienvenido ${users[user].displayName}`, 'success');
+      showToast(`Bienvenido ${user}`, 'success');
       
       // Iniciar temporizador de inactividad
       resetInactivityTimer();
@@ -1056,7 +918,7 @@
       if (u && s) {
         currentUserData = u;
         currentStore = s;
-        isMasterUser = u === 'admin@accesorios.com';
+        isMasterUser = u === 'admin';
         return true;
       }
       return false;
@@ -1101,14 +963,11 @@
       // Mostrar tienda del usuario
       userLocations.innerHTML = `<i class="fas fa-map-marker-alt mr-2"></i> ${currentStore}`;
       
-      currentUser.textContent = users[currentUserData].displayName;
+      currentUser.textContent = currentUserData;
       currentStoreBadge.textContent = currentStore;
       
       // Mostrar panel admin solo para usuarios master
       adminPanelBtn.classList.toggle('hidden', !isMasterUser);
-      
-      // Mostrar filtro de tienda solo para admin
-      storeFilterContainer.classList.toggle('hidden', !isMasterUser);
       
       // Cargar datos de ventas
       salesData = getLocalStorageData();
@@ -1233,7 +1092,7 @@
       });
     }
     
-    async function saveSale() {
+    function saveSale() {
       if (saleItems.length === 0) {
         showToast('Agregue artículos primero', 'error');
         return;
@@ -1255,33 +1114,25 @@
         timestamp: new Date().toISOString()
       };
       
-      try {
-        // Guardar venta en localStorage
-        initializeStoreData(currentStore);
-        salesData[currentStore].sales.push(sale);
-        saveLocalStorageData();
-        
-        // Actualizar estadísticas
-        updateStoreStats(currentStore, saleItems, sale.payment);
-        
-        // Respaldar en Firebase
-        await backupSaleToFirebase(sale);
-        
-        // Resetear formulario
-        saleItems = [];
-        paymentSelect.selectedIndex = 0;
-        manualTimeInput.value = '';
-        quantityInput.value = '1';
-        
-        // Actualizar UI
-        updateSaleItemsDisplay();
-        loadLastSale();
-        
-        showToast('Venta guardada exitosamente!', 'success');
-      } catch (error) {
-        showToast('Error al guardar la venta', 'error');
-        console.error('Error:', error);
-      }
+      // Guardar venta
+      initializeStoreData(currentStore);
+      salesData[currentStore].sales.push(sale);
+      saveLocalStorageData();
+      
+      // Actualizar estadísticas
+      updateStoreStats(currentStore, saleItems, sale.payment);
+      
+      // Resetear formulario
+      saleItems = [];
+      paymentSelect.selectedIndex = 0;
+      manualTimeInput.value = '';
+      quantityInput.value = '1';
+      
+      // Actualizar UI
+      updateSaleItemsDisplay();
+      loadLastSale();
+      
+      showToast('Venta guardada exitosamente!', 'success');
     }
     
     function clearAllItems() {
@@ -1306,12 +1157,7 @@
       
       const lastSale = sales[sales.length - 1];
       const date = new Date(lastSale.timestamp);
-      let formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Si hay hora manual, usarla
-      if (lastSale.manualTime) {
-        formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${lastSale.manualTime}`;
-      }
+      const formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
       
       let itemsHtml = lastSale.items.map(item => 
         `<li>${item.quantity} ${item.category}</li>`
@@ -1512,33 +1358,30 @@
       }
     }
     
-    async function loadSales() {
-      const startDate = new Date(startDateInput.value);
-      const endDate = new Date(endDateInput.value);
+    function loadSales() {
+      let startDateValue = startDateInput.value;
+      let endDateValue = endDateInput.value;
+
+      // Si no hay fecha de inicio, usar hoy
+      if (!startDateValue) {
+        startDateValue = new Date().toISOString().split('T')[0];
+        startDateInput.value = startDateValue;
+      }
+
+      // Si no hay fecha fin, usar hoy
+      if (!endDateValue) {
+        endDateValue = new Date().toISOString().split('T')[0];
+        endDateInput.value = endDateValue;
+      }
+
+      const startDate = new Date(startDateValue);
+      const endDate = new Date(endDateValue);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
-      
-      const store = isMasterUser ? storeFilter.value : currentStore;
+
+      const store = storeFilter.value;
       
       salesList.innerHTML = '';
       
-      // Si es admin, intentar cargar de Firebase primero
-      if (isMasterUser) {
-        try {
-          const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
-          if (firebaseSales.length > 0) {
-            displaySales(firebaseSales, store);
-            return;
-          }
-        } catch (error) {
-          console.error("Error al cargar de Firebase, mostrando localStorage:", error);
-        }
-      }
-      
-      // Cargar de localStorage si no es admin o si falló Firebase
-      loadSalesFromLocalStorage(store, startDate, endDate);
-    }
-    
-    function loadSalesFromLocalStorage(store, startDate, endDate) {
       // Recorrer todas las tiendas
       for (const [storeName, storeData] of Object.entries(salesData)) {
         // Filtrar por tienda si es necesario
@@ -1561,12 +1404,7 @@
         // Agregar ventas
         filteredSales.forEach(sale => {
           const dateObj = new Date(sale.timestamp);
-          let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-          
-          // Si hay hora manual, usarla
-          if (sale.manualTime) {
-            formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-          }
+          const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
           
           let itemsHtml = sale.items.map(item => 
             `<li>${item.quantity} ${item.category}</li>`
@@ -1578,7 +1416,7 @@
             <div class="flex justify-between items-start">
               <div>
                 <div class="font-semibold">${formattedDate}</div>
-                <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+                <div class="text-sm text-gray-600">Usuario: ${sale.user}</div>
               </div>
               <div class="flex gap-2">
                 <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
@@ -1651,164 +1489,76 @@
       });
     }
     
-    function displaySales(sales, storeFilter) {
-      if (sales.length === 0) {
-        salesList.innerHTML = `
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-receipt text-3xl mb-2"></i>
-            <p>No hay ventas en el rango seleccionado</p>
-          </div>
-        `;
-        return;
+    function loadAdminSales() {
+      let startDateValue = adminStartDate.value;
+      let endDateValue = adminEndDate.value;
+
+      if (!startDateValue) {
+        startDateValue = new Date().toISOString().split('T')[0];
+        adminStartDate.value = startDateValue;
       }
-      
-      // Agrupar por tienda si es admin y se seleccionó "todas"
-      if (isMasterUser && storeFilter === 'all') {
-        const salesByStore = {};
-        
-        sales.forEach(sale => {
-          if (!salesByStore[sale.store]) {
-            salesByStore[sale.store] = [];
-          }
-          salesByStore[sale.store].push(sale);
-        });
-        
-        for (const [store, storeSales] of Object.entries(salesByStore)) {
-          const storeHeader = document.createElement('div');
-          storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-          storeHeader.textContent = `Tienda: ${store}`;
-          salesList.appendChild(storeHeader);
-          
-          storeSales.forEach(sale => createSaleElement(sale));
-        }
-      } else {
-        sales.forEach(sale => createSaleElement(sale));
+
+      if (!endDateValue) {
+        endDateValue = new Date().toISOString().split('T')[0];
+        adminEndDate.value = endDateValue;
       }
-    }
-    
-    function createSaleElement(sale) {
-      const dateObj = new Date(sale.timestamp);
-      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Si hay hora manual, usarla
-      if (sale.manualTime) {
-        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-      }
-      
-      let itemsHtml = sale.items.map(item => 
-        `<li>${item.quantity} ${item.category}</li>`
-      ).join('');
-      
-      const saleElement = document.createElement('div');
-      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-      saleElement.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="font-semibold">${formattedDate}</div>
-            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-            ${isMasterUser ? `<div class="text-sm text-gray-600">Tienda: ${sale.store}</div>` : ''}
-          </div>
-          <div class="flex gap-2">
-            <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="delete-sale-btn bg-red-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div class="mt-2">
-          <div class="font-semibold">Método de pago: ${sale.payment}</div>
-          <div class="font-semibold mt-1">Artículos:</div>
-          <ul class="list-disc pl-5">
-            ${itemsHtml}
-          </ul>
-        </div>
-      `;
-      
-      salesList.appendChild(saleElement);
-    }
-    
-    async function loadAdminSales() {
-      const startDate = new Date(adminStartDate.value);
-      const endDate = new Date(adminEndDate.value);
+
+      const startDate = new Date(startDateValue);
+      const endDate = new Date(endDateValue);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
       
       const store = adminStoreFilter.value;
       
       adminSalesList.innerHTML = '';
       
-      try {
-        // Obtener ventas de Firebase
-        const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
+      // Recorrer todas las tiendas
+      for (const [storeName, storeData] of Object.entries(salesData)) {
+        // Filtrar por tienda si es necesario
+        if (store !== 'all' && store !== storeName) continue;
         
-        if (firebaseSales.length === 0) {
-          adminSalesList.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-              <i class="fas fa-receipt text-3xl mb-2"></i>
-              <p>No hay ventas en el rango seleccionado</p>
-            </div>
-          `;
-          return;
-        }
-        
-        // Mostrar ventas agrupadas por tienda
-        const salesByStore = {};
-        firebaseSales.forEach(sale => {
-          if (!salesByStore[sale.store]) {
-            salesByStore[sale.store] = [];
-          }
-          salesByStore[sale.store].push(sale);
+        // Filtrar ventas por fecha
+        const filteredSales = storeData.sales.filter(sale => {
+          const saleDate = new Date(sale.timestamp);
+          return saleDate >= startDate && saleDate < endDate;
         });
         
-        for (const [storeName, storeSales] of Object.entries(salesByStore)) {
-          // Encabezado de tienda
-          const storeHeader = document.createElement('div');
-          storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-          storeHeader.textContent = `Tienda: ${storeName}`;
-          adminSalesList.appendChild(storeHeader);
+        if (filteredSales.length === 0) continue;
+        
+        // Crear encabezado de tienda
+        const storeHeader = document.createElement('div');
+        storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+        storeHeader.textContent = `Tienda: ${storeName}`;
+        adminSalesList.appendChild(storeHeader);
+        
+        // Agregar ventas
+        filteredSales.forEach(sale => {
+          const dateObj = new Date(sale.timestamp);
+          const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
           
-          storeSales.forEach(sale => {
-            const dateObj = new Date(sale.timestamp);
-            let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-            
-            // Si hay hora manual, usarla
-            if (sale.manualTime) {
-              formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-            }
-            
-            let itemsHtml = sale.items.map(item => 
-              `<li>${item.quantity} ${item.category}</li>`
-            ).join('');
-            
-            const saleElement = document.createElement('div');
-            saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-            saleElement.innerHTML = `
-              <div class="flex justify-between items-start">
-                <div>
-                  <div class="font-semibold">${formattedDate}</div>
-                  <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-                </div>
+          let itemsHtml = sale.items.map(item => 
+            `<li>${item.quantity} ${item.category}</li>`
+          ).join('');
+          
+          const saleElement = document.createElement('div');
+          saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+          saleElement.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-semibold">${formattedDate}</div>
+                <div class="text-sm text-gray-600">Usuario: ${sale.user}</div>
               </div>
-              <div class="mt-2">
-                <div class="font-semibold">Método de pago: ${sale.payment}</div>
-                <div class="font-semibold mt-1">Artículos:</div>
-                <ul class="list-disc pl-5">
-                  ${itemsHtml}
-                </ul>
-              </div>
-            `;
-            adminSalesList.appendChild(saleElement);
-          });
-        }
-      } catch (error) {
-        console.error("Error al obtener ventas:", error);
-        adminSalesList.innerHTML = `
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
-            <p>Error al cargar ventas</p>
-          </div>
-        `;
+            </div>
+            <div class="mt-2">
+              <div class="font-semibold">Método de pago: ${sale.payment}</div>
+              <div class="font-semibold mt-1">Artículos:</div>
+              <ul class="list-disc pl-5">
+                ${itemsHtml}
+              </ul>
+            </div>
+          `;
+          
+          adminSalesList.appendChild(saleElement);
+        });
       }
     }
     
@@ -1816,8 +1566,8 @@
       usersOnlineList.innerHTML = '';
       
       // Recorrer todas las tiendas
-      for (const [store, usersList] of Object.entries(activeSessions)) {
-        if (usersList.length === 0) continue;
+      for (const [store, users] of Object.entries(activeSessions)) {
+        if (users.length === 0) continue;
         
         // Encabezado de tienda
         const storeHeader = document.createElement('div');
@@ -1826,7 +1576,7 @@
         usersOnlineList.appendChild(storeHeader);
         
         // Usuarios por tienda
-        usersList.forEach(user => {
+        users.forEach(user => {
           const userElement = document.createElement('div');
           userElement.className = 'bg-white p-4 rounded-lg shadow border border-gray-200';
           userElement.innerHTML = `
@@ -1834,7 +1584,7 @@
               <div>
                 <div class="font-medium flex items-center">
                   <span class="online-status online"></span>
-                  ${users[user]?.displayName || user}
+                  ${user}
                 </div>
                 <div class="text-sm text-gray-600">${store}</div>
               </div>
@@ -1858,7 +1608,7 @@
             activeSessions[store] = activeSessions[store].filter(u => u !== user);
             localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
             loadOnlineUsers();
-            showToast(`Usuario ${users[user]?.displayName || user} desconectado de ${store}`, 'success');
+            showToast(`Usuario ${user} desconectado de ${store}`, 'success');
           }
         });
       });
@@ -1978,14 +1728,14 @@
         const user = users[username];
         if (user && user.password === password) {
           // Verificar si el usuario tiene acceso a la tienda
-          if (username !== 'admin@accesorios.com' && !user.stores.includes(store)) {
+          if (username !== 'admin' && !user.stores.includes(store)) {
             errorMessage.textContent = 'No tiene acceso a esta tienda';
             errorMessage.classList.remove('hidden');
             return;
           }
           
           // Verificar límite de sesiones por tienda (solo si no es admin)
-          if (username !== 'admin@accesorios.com') {
+          if (username !== 'admin') {
             if (activeSessions[store] && activeSessions[store].length >= 2) {
               errorMessage.textContent = 'Límite de usuarios alcanzado para esta tienda';
               errorMessage.classList.remove('hidden');
@@ -1995,7 +1745,7 @@
           
           currentUserData = username;
           currentStore = store;
-          isMasterUser = username === 'admin@accesorios.com';
+          isMasterUser = username === 'admin';
           saveSession(username, store);
           showMainContent();
         } else {
@@ -2044,9 +1794,6 @@
         loadSales();
       });
       
-      // Sincronizar con Firebase
-      syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
-      
       // Panel de administración
       adminPanelBtn.addEventListener('click', () => {
         adminModal.classList.add('show');
@@ -2076,21 +1823,15 @@
         editSaleModal.classList.remove('show');
       });
       
-      // Cambiar cantidad - Corregido
+      // Cambiar cantidad
       decreaseQtyBtn.addEventListener('click', () => {
         const current = parseInt(quantityInput.value) || 1;
-        if (current > 1) {
-          quantityInput.value = current - 1;
-          // Actualizar valor inmediatamente
-          quantityInput.dispatchEvent(new Event('change'));
-        }
+        if (current > 1) quantityInput.value = current - 1;
       });
       
       increaseQtyBtn.addEventListener('click', () => {
         const current = parseInt(quantityInput.value) || 1;
         quantityInput.value = current + 1;
-        // Actualizar valor inmediatamente
-        quantityInput.dispatchEvent(new Event('change'));
       });
       
       // Agregar ítem en edición
@@ -2128,7 +1869,7 @@
       // Eliminar venta
       deleteSaleBtn.addEventListener('click', deleteSale);
       
-      // Analytics - Corregido para actualizar estadísticas
+      // Analytics
       analyticsBtn.addEventListener('click', () => {
         analyticsModal.classList.add('show');
         updateAnalyticsStats();
