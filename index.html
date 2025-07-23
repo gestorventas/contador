@@ -345,12 +345,12 @@
         <div>
           <label class="block font-semibold text-gray-700 mb-2">Cantidad</label>
           <div class="flex">
-            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg">
+            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg hover:bg-gray-300">
               <i class="fas fa-minus"></i>
             </button>
             <input type="number" id="item-quantity" min="1" value="1" 
                    class="w-full p-2 border-y border-gray-300 text-center focus:outline-none">
-            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg">
+            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg hover:bg-gray-300">
               <i class="fas fa-plus"></i>
             </button>
           </div>
@@ -924,15 +924,13 @@
     // Funciones Firebase
     async function backupSaleToFirebase(sale) {
       try {
-        const docRef = await db.collection('ventas').add({
+        await db.collection('ventas').add({
           ...sale,
           backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        console.log("Venta respaldada en Firebase con ID:", docRef.id);
-        return docRef.id;
+        console.log("Venta respaldada en Firebase");
       } catch (error) {
         console.error("Error al respaldar venta:", error);
-        return null;
       }
     }
 
@@ -948,13 +946,30 @@
         }
 
         const snapshot = await query.get();
-        return snapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        }));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
         console.error("Error al obtener ventas:", error);
         return [];
+      }
+    }
+
+    async function syncAllSalesToFirebase() {
+      if (!isMasterUser) return;
+      
+      try {
+        let total = 0;
+        
+        for (const [store, storeData] of Object.entries(salesData)) {
+          for (const sale of storeData.sales) {
+            await backupSaleToFirebase(sale);
+            total++;
+          }
+        }
+        
+        showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
+      } catch (error) {
+        showToast('Error al sincronizar ventas', 'error');
+        console.error("Error:", error);
       }
     }
 
@@ -1103,7 +1118,6 @@
       loadLastSale();
     }
     
-    // FIX: Función corregida para analytics
     function updateAnalyticsStats() {
       const stats = getStoreStats(currentStore);
       
@@ -1219,19 +1233,6 @@
       });
     }
     
-    // FIX: Usar hora manual si está especificada
-    function getCurrentTimestamp() {
-      if (manualTimeInput.value) {
-        // Usar hora manual si está especificada
-        const today = new Date();
-        const [hours, minutes] = manualTimeInput.value.split(':');
-        today.setHours(parseInt(hours, 10));
-        today.setMinutes(parseInt(minutes, 10));
-        return today.toISOString();
-      }
-      return new Date().toISOString();
-    }
-    
     async function saveSale() {
       if (saleItems.length === 0) {
         showToast('Agregue artículos primero', 'error');
@@ -1243,7 +1244,7 @@
         return;
       }
       
-      // Crear objeto de venta con hora manual
+      // Crear objeto de venta
       const sale = {
         id: Date.now(),
         store: currentStore,
@@ -1251,7 +1252,7 @@
         items: [...saleItems],
         payment: paymentSelect.value,
         manualTime: manualTimeInput.value || null,
-        timestamp: getCurrentTimestamp() // Usa la función corregida
+        timestamp: new Date().toISOString()
       };
       
       try {
@@ -1289,7 +1290,6 @@
       showToast('Todos los artículos fueron eliminados', 'warning');
     }
     
-    // FIX: Mostrar hora manual en última venta
     function loadLastSale() {
       initializeStoreData(currentStore);
       const sales = salesData[currentStore].sales;
@@ -1306,13 +1306,11 @@
       
       const lastSale = sales[sales.length - 1];
       const date = new Date(lastSale.timestamp);
-      
-      // MOSTRAR HORA MANUAL SI EXISTE
       let formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
       
+      // Si hay hora manual, usarla
       if (lastSale.manualTime) {
-        const [hours, minutes] = lastSale.manualTime.split(':');
-        formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${hours}:${minutes}`;
+        formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${lastSale.manualTime}`;
       }
       
       let itemsHtml = lastSale.items.map(item => 
@@ -1563,7 +1561,12 @@
         // Agregar ventas
         filteredSales.forEach(sale => {
           const dateObj = new Date(sale.timestamp);
-          const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+          let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+          
+          // Si hay hora manual, usarla
+          if (sale.manualTime) {
+            formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
+          }
           
           let itemsHtml = sale.items.map(item => 
             `<li>${item.quantity} ${item.category}</li>`
@@ -1685,7 +1688,12 @@
     
     function createSaleElement(sale) {
       const dateObj = new Date(sale.timestamp);
-      const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+      
+      // Si hay hora manual, usarla
+      if (sale.manualTime) {
+        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
+      }
       
       let itemsHtml = sale.items.map(item => 
         `<li>${item.quantity} ${item.category}</li>`
@@ -1721,7 +1729,6 @@
       salesList.appendChild(saleElement);
     }
     
-    // FIX: Panel de administración con filtros corregidos
     async function loadAdminSales() {
       const startDate = new Date(adminStartDate.value);
       const endDate = new Date(adminEndDate.value);
@@ -1729,41 +1736,13 @@
       
       const store = adminStoreFilter.value;
       
-      adminSalesList.innerHTML = '<div class="text-center py-4 text-gray-500">Cargando ventas...</div>';
+      adminSalesList.innerHTML = '';
       
       try {
-        let sales = [];
+        // Obtener ventas de Firebase
+        const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
         
-        if (store === 'all') {
-          // Cargar todas las tiendas
-          const allStores = ['506', 'centro', 'pavas', 'terramall', 'escazu', 'hot', 'desamparados', 'canonazo', 'sabanilla'];
-          const promises = allStores.map(s => getSalesFromFirebase(s, startDate, endDate));
-          const results = await Promise.all(promises);
-          sales = results.flat();
-        } else {
-          // Cargar solo la tienda seleccionada
-          sales = await getSalesFromFirebase(store, startDate, endDate);
-        }
-        
-        // Si no hay datos en Firebase, cargar del localStorage
-        if (sales.length === 0) {
-          sales = [];
-          for (const [storeName, storeData] of Object.entries(salesData)) {
-            if (store !== 'all' && store !== storeName) continue;
-            
-            const filteredSales = storeData.sales.filter(sale => {
-              const saleDate = new Date(sale.timestamp);
-              return saleDate >= startDate && saleDate < endDate;
-            });
-            
-            sales.push(...filteredSales);
-          }
-        }
-        
-        // Mostrar los resultados
-        adminSalesList.innerHTML = '';
-        
-        if (sales.length === 0) {
+        if (firebaseSales.length === 0) {
           adminSalesList.innerHTML = `
             <div class="text-center py-8 text-gray-500">
               <i class="fas fa-receipt text-3xl mb-2"></i>
@@ -1773,109 +1752,64 @@
           return;
         }
         
-        // Agrupar por tienda si se seleccionó "todas"
-        if (store === 'all') {
-          const salesByStore = {};
-          
-          sales.forEach(sale => {
-            if (!salesByStore[sale.store]) {
-              salesByStore[sale.store] = [];
-            }
-            salesByStore[sale.store].push(sale);
-          });
-          
-          for (const [storeName, storeSales] of Object.entries(salesByStore)) {
-            const storeHeader = document.createElement('div');
-            storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-            storeHeader.textContent = `Tienda: ${storeName}`;
-            adminSalesList.appendChild(storeHeader);
-            
-            storeSales.forEach(sale => createAdminSaleElement(sale));
+        // Mostrar ventas agrupadas por tienda
+        const salesByStore = {};
+        firebaseSales.forEach(sale => {
+          if (!salesByStore[sale.store]) {
+            salesByStore[sale.store] = [];
           }
-        } else {
-          sales.forEach(sale => createAdminSaleElement(sale));
-        }
+          salesByStore[sale.store].push(sale);
+        });
         
+        for (const [storeName, storeSales] of Object.entries(salesByStore)) {
+          // Encabezado de tienda
+          const storeHeader = document.createElement('div');
+          storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+          storeHeader.textContent = `Tienda: ${storeName}`;
+          adminSalesList.appendChild(storeHeader);
+          
+          storeSales.forEach(sale => {
+            const dateObj = new Date(sale.timestamp);
+            let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+            
+            // Si hay hora manual, usarla
+            if (sale.manualTime) {
+              formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
+            }
+            
+            let itemsHtml = sale.items.map(item => 
+              `<li>${item.quantity} ${item.category}</li>`
+            ).join('');
+            
+            const saleElement = document.createElement('div');
+            saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+            saleElement.innerHTML = `
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="font-semibold">${formattedDate}</div>
+                  <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+                </div>
+              </div>
+              <div class="mt-2">
+                <div class="font-semibold">Método de pago: ${sale.payment}</div>
+                <div class="font-semibold mt-1">Artículos:</div>
+                <ul class="list-disc pl-5">
+                  ${itemsHtml}
+                </ul>
+              </div>
+            `;
+            adminSalesList.appendChild(saleElement);
+          });
+        }
       } catch (error) {
-        console.error("Error al cargar ventas:", error);
+        console.error("Error al obtener ventas:", error);
         adminSalesList.innerHTML = `
-          <div class="text-center py-8 text-red-500">
+          <div class="text-center py-8 text-gray-500">
             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
             <p>Error al cargar ventas</p>
-            <p class="text-sm mt-2">${error.message}</p>
           </div>
         `;
       }
-    }
-
-    // Función auxiliar para crear elementos de venta en el panel admin
-    function createAdminSaleElement(sale) {
-      const dateObj = new Date(sale.timestamp);
-      const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-      
-      let itemsHtml = sale.items.map(item => 
-        `<li>${item.quantity} ${item.category}</li>`
-      ).join('');
-      
-      const saleElement = document.createElement('div');
-      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-      saleElement.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="font-semibold">${formattedDate}</div>
-            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-            <div class="text-sm text-gray-600">Tienda: ${sale.store}</div>
-          </div>
-          <div class="flex gap-2">
-            <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="delete-sale-btn bg-red-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div class="mt-2">
-          <div class="font-semibold">Método de pago: ${sale.payment}</div>
-          <div class="font-semibold mt-1">Artículos:</div>
-          <ul class="list-disc pl-5">
-            ${itemsHtml}
-          </ul>
-        </div>
-      `;
-      
-      // Agregar event listeners para los botones
-      saleElement.querySelector('.edit-sale-btn').addEventListener('click', () => {
-        openEditModal(sale.id);
-      });
-      
-      saleElement.querySelector('.delete-sale-btn').addEventListener('click', async () => {
-        if (confirm('¿Estás seguro de eliminar esta venta?')) {
-          try {
-            // Eliminar de Firebase si existe allí
-            if (sale.id) {
-              await db.collection('ventas').doc(sale.id).delete();
-            }
-            
-            // Eliminar del localStorage si existe allí
-            for (const [store, data] of Object.entries(salesData)) {
-              const index = data.sales.findIndex(s => s.id === sale.id);
-              if (index !== -1) {
-                data.sales.splice(index, 1);
-              }
-            }
-            
-            saveLocalStorageData();
-            loadAdminSales();
-            showToast('Venta eliminada exitosamente', 'success');
-          } catch (error) {
-            showToast('Error al eliminar venta', 'error');
-            console.error(error);
-          }
-        }
-      });
-      
-      adminSalesList.appendChild(saleElement);
     }
     
     function loadOnlineUsers() {
@@ -2110,18 +2044,8 @@
         loadSales();
       });
       
-      // FIX: Botones de cantidad
-      decreaseQtyBtn.addEventListener('click', () => {
-        const current = parseInt(quantityInput.value) || 1;
-        if (current > 1) {
-          quantityInput.value = current - 1;
-        }
-      });
-      
-      increaseQtyBtn.addEventListener('click', () => {
-        const current = parseInt(quantityInput.value) || 1;
-        quantityInput.value = current + 1;
-      });
+      // Sincronizar con Firebase
+      syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
       
       // Panel de administración
       adminPanelBtn.addEventListener('click', () => {
@@ -2150,6 +2074,23 @@
       // Cerrar modal de edición
       closeEditModal.addEventListener('click', () => {
         editSaleModal.classList.remove('show');
+      });
+      
+      // Cambiar cantidad - Corregido
+      decreaseQtyBtn.addEventListener('click', () => {
+        const current = parseInt(quantityInput.value) || 1;
+        if (current > 1) {
+          quantityInput.value = current - 1;
+          // Actualizar valor inmediatamente
+          quantityInput.dispatchEvent(new Event('change'));
+        }
+      });
+      
+      increaseQtyBtn.addEventListener('click', () => {
+        const current = parseInt(quantityInput.value) || 1;
+        quantityInput.value = current + 1;
+        // Actualizar valor inmediatamente
+        quantityInput.dispatchEvent(new Event('change'));
       });
       
       // Agregar ítem en edición
@@ -2187,7 +2128,7 @@
       // Eliminar venta
       deleteSaleBtn.addEventListener('click', deleteSale);
       
-      // Analytics
+      // Analytics - Corregido para actualizar estadísticas
       analyticsBtn.addEventListener('click', () => {
         analyticsModal.classList.add('show');
         updateAnalyticsStats();
