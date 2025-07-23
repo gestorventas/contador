@@ -7,22 +7,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#3b82f6',
-            secondary: '#10b981',
-            accent: '#8b5cf6',
-            danger: '#ef4444',
-            warning: '#f59e0b',
-            dark: '#1f2937',
-          }
-        }
-      }
-    }
-  </script>
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  
   <style>
     body {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -232,7 +221,7 @@
   </div>
 
   <!-- Login Screen -->
-  <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4">
+  <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4 hidden">
     <div class="text-center mb-10">
       <div class="flex justify-center mb-4">
         <div class="bg-blue-100 p-4 rounded-full">
@@ -247,10 +236,10 @@
       <h2 class="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h2>
       
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">Usuario</label>
+        <label class="block text-sm font-medium text-gray-700">Usuario (Correo)</label>
         <div class="relative">
-          <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="username" placeholder="Ingrese su usuario" required 
+          <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          <input type="email" id="username" placeholder="Ingrese su correo" required 
                  class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
       </div>
@@ -294,7 +283,7 @@
   </div>
 
   <!-- Main Content -->
-  <div id="main-content" class="hidden flex-1 p-4 max-w-7xl mx-auto w-full">
+  <div id="main-content" class="flex-1 p-4 max-w-7xl mx-auto w-full hidden">
     <!-- Header -->
     <header class="bg-white rounded-xl shadow p-4 mb-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between">
@@ -330,72 +319,6 @@
         </div>
       </div>
     </header>
-    
-    <!-- Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-      <div class="stats-card p-5">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-700">Ventas Hoy</h3>
-            <p id="today-sales" class="text-2xl font-bold mt-1">0</p>
-          </div>
-          <div class="bg-blue-100 p-3 rounded-full">
-            <i class="fas fa-shopping-bag text-blue-600 text-xl"></i>
-          </div>
-        </div>
-        <div class="mt-4">
-          <div class="flex justify-between text-sm text-gray-600 mb-1">
-            <span>Meta: 25 ventas</span>
-            <span id="sales-goal-percent">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div id="sales-progress" class="progress-fill bg-blue-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="stats-card p-5">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-700">Artículos Vendidos</h3>
-            <p id="today-items" class="text-2xl font-bold mt-1">0</p>
-          </div>
-          <div class="bg-green-100 p-3 rounded-full">
-            <i class="fas fa-tags text-green-600 text-xl"></i>
-          </div>
-        </div>
-        <div class="mt-4">
-          <div class="flex justify-between text-sm text-gray-600 mb-1">
-            <span>Promedio por venta: <span id="avg-per-sale">0</span></span>
-            <span id="items-change">+0%</span>
-          </div>
-          <div class="progress-bar">
-            <div id="items-progress" class="progress-fill bg-green-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="stats-card p-5">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-700">Métodos de Pago</h3>
-            <p id="payment-methods" class="text-2xl font-bold mt-1">0</p>
-          </div>
-          <div class="bg-purple-100 p-3 rounded-full">
-            <i class="fas fa-credit-card text-purple-600 text-xl"></i>
-          </div>
-        </div>
-        <div class="mt-4">
-          <div class="flex justify-between text-sm text-gray-600 mb-1">
-            <span>Principal: <span id="main-payment">-</span></span>
-            <span id="main-payment-percent">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div id="payment-progress" class="progress-fill bg-purple-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-    </div>
     
     <!-- Form Section -->
     <div class="bg-white rounded-xl shadow p-6 mb-6">
@@ -636,6 +559,9 @@
           <button id="clear-filter" class="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 flex items-center">
             <i class="fas fa-undo mr-2"></i> Limpiar
           </button>
+          <button id="sync-firebase-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+            <i class="fas fa-sync-alt mr-2"></i> Sincronizar
+          </button>
         </div>
       </div>
       
@@ -777,26 +703,108 @@
 
   <script>
   (() => {
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDjlI3qysLRd41TW3QTImB2XvdrhZ6PV8g",
+      authDomain: "contador-214a3.firebaseapp.com",
+      projectId: "contador-214a3",
+      storageBucket: "contador-214a3.appspot.com",
+      messagingSenderId: "909890810354",
+      appId: "1:909890810354:web:007e7efd4281b25356bb6b"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     // Variables y DOM
     const users = { 
-      // Credenciales por tienda (máximo 2 usuarios por tienda + admin)
-      admin: { password: 'admin123', stores: ['all'] },
-      centro1: { password: 'centro123', stores: ['centro'] },
-      centro2: { password: 'centro456', stores: ['centro'] },
-      pavas1: { password: 'pavas123', stores: ['pavas'] },
-      pavas2: { password: 'pavas456', stores: ['pavas'] },
-      terramall1: { password: 'terramall123', stores: ['terramall'] },
-      terramall2: { password: 'terramall456', stores: ['terramall'] },
-      escazu1: { password: 'escazu123', stores: ['escazu'] },
-      escazu2: { password: 'escazu456', stores: ['escazu'] },
-      hot1: { password: 'hot123', stores: ['hot'] },
-      hot2: { password: 'hot456', stores: ['hot'] },
-      desamparados1: { password: 'desamparados123', stores: ['desamparados'] },
-      desamparados2: { password: 'desamparados456', stores: ['desamparados'] },
-      canonazo1: { password: 'canonazo123', stores: ['canonazo'] },
-      canonazo2: { password: 'canonazo456', stores: ['canonazo'] },
-      sabanilla1: { password: 'sabanilla123', stores: ['sabanilla'] },
-      sabanilla2: { password: 'sabanilla456', stores: ['sabanilla'] }
+      // Credenciales con correos ficticios y contraseñas aleatorias
+      'admin@accesorios.com': { 
+        password: 'AdminSecure123!', 
+        stores: ['all'],
+        displayName: 'Admin'
+      },
+      'centro1@accesorios.com': { 
+        password: 'Centro1Pass456$', 
+        stores: ['centro'],
+        displayName: 'Centro 1'
+      },
+      'centro2@accesorios.com': { 
+        password: 'Centro2Secure789#', 
+        stores: ['centro'],
+        displayName: 'Centro 2'
+      },
+      'pavas1@accesorios.com': { 
+        password: 'Pavas1Acc123$', 
+        stores: ['pavas'],
+        displayName: 'Pavas 1'
+      },
+      'pavas2@accesorios.com': { 
+        password: 'Pavas2Vent456#', 
+        stores: ['pavas'],
+        displayName: 'Pavas 2'
+      },
+      'terramall1@accesorios.com': { 
+        password: 'TerraMall1!789', 
+        stores: ['terramall'],
+        displayName: 'Terramall 1'
+      },
+      'terramall2@accesorios.com': { 
+        password: 'TerraMall2$012', 
+        stores: ['terramall'],
+        displayName: 'Terramall 2'
+      },
+      'escazu1@accesorios.com': { 
+        password: 'Escazu1Acc345#', 
+        stores: ['escazu'],
+        displayName: 'Escazú 1'
+      },
+      'escazu2@accesorios.com': { 
+        password: 'Escazu2Vent678!', 
+        stores: ['escazu'],
+        displayName: 'Escazú 2'
+      },
+      'hot1@accesorios.com': { 
+        password: 'Hot1Store901$', 
+        stores: ['hot'],
+        displayName: 'Hot 1'
+      },
+      'hot2@accesorios.com': { 
+        password: 'Hot2Tienda234#', 
+        stores: ['hot'],
+        displayName: 'Hot 2'
+      },
+      'desamparados1@accesorios.com': { 
+        password: 'Desampa1Acc567!', 
+        stores: ['desamparados'],
+        displayName: 'Desamparados 1'
+      },
+      'desamparados2@accesorios.com': { 
+        password: 'Desampa2Vent890$', 
+        stores: ['desamparados'],
+        displayName: 'Desamparados 2'
+      },
+      'canonazo1@accesorios.com': { 
+        password: 'Canonazo1Acc123#', 
+        stores: ['canonazo'],
+        displayName: 'Cañonazo 1'
+      },
+      'canonazo2@accesorios.com': { 
+        password: 'Canonazo2Vent456!', 
+        stores: ['canonazo'],
+        displayName: 'Cañonazo 2'
+      },
+      'sabanilla1@accesorios.com': { 
+        password: 'Sabanilla1Acc789$', 
+        stores: ['sabanilla'],
+        displayName: 'Sabanilla 1'
+      },
+      'sabanilla2@accesorios.com': { 
+        password: 'Sabanilla2Vent012#', 
+        stores: ['sabanilla'],
+        displayName: 'Sabanilla 2'
+      }
     };
     
     const loginForm      = document.getElementById('login-form');
@@ -821,8 +829,10 @@
     const startDateInput = document.getElementById('start-date');
     const endDateInput   = document.getElementById('end-date');
     const storeFilter    = document.getElementById('store-filter');
+    const storeFilterContainer = document.getElementById('store-filter-container');
     const applyFilterBtn = document.getElementById('apply-filter');
     const clearFilterBtn = document.getElementById('clear-filter');
+    const syncFirebaseBtn = document.getElementById('sync-firebase-btn');
     const toast          = document.getElementById('toast');
     const toastMessage   = document.getElementById('toast-message');
     const adminPanelBtn  = document.getElementById('admin-panel-btn');
@@ -848,17 +858,6 @@
     const currentSaleItems = document.getElementById('current-sale-items');
     const lastSaleContainer = document.getElementById('last-sale-container');
     const currentStoreBadge = document.getElementById('current-store-badge');
-    const todaySales = document.getElementById('today-sales');
-    const todayItems = document.getElementById('today-items');
-    const avgPerSale = document.getElementById('avg-per-sale');
-    const salesProgress = document.getElementById('sales-progress');
-    const itemsProgress = document.getElementById('items-progress');
-    const salesGoalPercent = document.getElementById('sales-goal-percent');
-    const itemsChange = document.getElementById('items-change');
-    const paymentMethods = document.getElementById('payment-methods');
-    const mainPayment = document.getElementById('main-payment');
-    const mainPaymentPercent = document.getElementById('main-payment-percent');
-    const paymentProgress = document.getElementById('payment-progress');
     const editItemsContainer = document.getElementById('edit-items-container');
     const addEditItemBtn = document.getElementById('add-edit-item');
     const editPayment = document.getElementById('edit-payment');
@@ -912,7 +911,59 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // Almacenamiento
+    // Funciones Firebase
+    async function backupSaleToFirebase(sale) {
+      try {
+        await db.collection('ventas').add({
+          ...sale,
+          backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log("Venta respaldada en Firebase");
+      } catch (error) {
+        console.error("Error al respaldar venta:", error);
+      }
+    }
+
+    async function getSalesFromFirebase(store = 'all', startDate, endDate) {
+      try {
+        let query = db.collection('ventas')
+          .where('timestamp', '>=', startDate.toISOString())
+          .where('timestamp', '<=', endDate.toISOString())
+          .orderBy('timestamp', 'desc');
+
+        if (store !== 'all') {
+          query = query.where('store', '==', store);
+        }
+
+        const snapshot = await query.get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error("Error al obtener ventas:", error);
+        return [];
+      }
+    }
+
+    async function syncAllSalesToFirebase() {
+      if (!isMasterUser) return;
+      
+      try {
+        let total = 0;
+        
+        for (const [store, storeData] of Object.entries(salesData)) {
+          for (const sale of storeData.sales) {
+            await backupSaleToFirebase(sale);
+            total++;
+          }
+        }
+        
+        showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
+      } catch (error) {
+        showToast('Error al sincronizar ventas', 'error');
+        console.error("Error:", error);
+      }
+    }
+
+    // Almacenamiento local
     function getLocalStorageData() {
       const data = localStorage.getItem('salesData');
       return data ? JSON.parse(data) : {};
@@ -983,7 +1034,7 @@
       }
       localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
       
-      showToast(`Bienvenido ${user}`, 'success');
+      showToast(`Bienvenido ${users[user].displayName}`, 'success');
       
       // Iniciar temporizador de inactividad
       resetInactivityTimer();
@@ -995,8 +1046,7 @@
       if (u && s) {
         currentUserData = u;
         currentStore = s;
-        isMasterUser = u === 'admin';
-        showMainContent();
+        isMasterUser = u === 'admin@accesorios.com';
         return true;
       }
       return false;
@@ -1041,68 +1091,21 @@
       // Mostrar tienda del usuario
       userLocations.innerHTML = `<i class="fas fa-map-marker-alt mr-2"></i> ${currentStore}`;
       
-      currentUser.textContent = currentUserData;
+      currentUser.textContent = users[currentUserData].displayName;
       currentStoreBadge.textContent = currentStore;
       
       // Mostrar panel admin solo para usuarios master
       adminPanelBtn.classList.toggle('hidden', !isMasterUser);
       
+      // Mostrar filtro de tienda solo para admin
+      storeFilterContainer.classList.toggle('hidden', !isMasterUser);
+      
       // Cargar datos de ventas
       salesData = getLocalStorageData();
       
       // Actualizar UI
-      updateStats();
       updateSaleItemsDisplay();
       loadLastSale();
-    }
-    
-    function updateStats() {
-      const stats = getStoreStats(currentStore);
-      
-      todaySales.textContent = stats.todaySales;
-      todayItems.textContent = stats.todayItems;
-      
-      // Calcular promedio por venta
-      const avg = stats.todaySales > 0 ? (stats.todayItems / stats.todaySales).toFixed(1) : 0;
-      avgPerSale.textContent = avg;
-      
-      // Progreso de ventas
-      const salesPercent = Math.min(Math.round((stats.todaySales / 25) * 100), 100);
-      salesProgress.style.width = `${salesPercent}%`;
-      salesGoalPercent.textContent = `${salesPercent}%`;
-      
-      // Progreso de artículos (asumiendo meta de 100 artículos)
-      const itemsPercent = Math.min(Math.round((stats.todayItems / 100) * 100), 100);
-      itemsProgress.style.width = `${itemsPercent}%`;
-      itemsChange.textContent = `+${itemsPercent}%`;
-      
-      // Métodos de pago
-      const paymentCount = Object.keys(stats.paymentMethods).length;
-      paymentMethods.textContent = paymentCount;
-      
-      // Método de pago principal
-      if (paymentCount > 0) {
-        let maxPayment = '';
-        let maxCount = 0;
-        let total = 0;
-        
-        for (const [payment, count] of Object.entries(stats.paymentMethods)) {
-          total += count;
-          if (count > maxCount) {
-            maxCount = count;
-            maxPayment = payment;
-          }
-        }
-        
-        const paymentPercent = Math.round((maxCount / total) * 100);
-        mainPayment.textContent = maxPayment;
-        mainPaymentPercent.textContent = `${paymentPercent}%`;
-        paymentProgress.style.width = `${paymentPercent}%`;
-      } else {
-        mainPayment.textContent = '-';
-        mainPaymentPercent.textContent = '0%';
-        paymentProgress.style.width = '0%';
-      }
     }
     
     function updateAnalyticsStats() {
@@ -1220,7 +1223,7 @@
       });
     }
     
-    function saveSale() {
+    async function saveSale() {
       if (saleItems.length === 0) {
         showToast('Agregue artículos primero', 'error');
         return;
@@ -1242,26 +1245,33 @@
         timestamp: new Date().toISOString()
       };
       
-      // Guardar venta
-      initializeStoreData(currentStore);
-      salesData[currentStore].sales.push(sale);
-      saveLocalStorageData();
-      
-      // Actualizar estadísticas
-      updateStoreStats(currentStore, saleItems, sale.payment);
-      
-      // Resetear formulario
-      saleItems = [];
-      paymentSelect.selectedIndex = 0;
-      manualTimeInput.value = '';
-      quantityInput.value = '1';
-      
-      // Actualizar UI
-      updateSaleItemsDisplay();
-      updateStats();
-      loadLastSale();
-      
-      showToast('Venta guardada exitosamente!', 'success');
+      try {
+        // Guardar venta en localStorage
+        initializeStoreData(currentStore);
+        salesData[currentStore].sales.push(sale);
+        saveLocalStorageData();
+        
+        // Actualizar estadísticas
+        updateStoreStats(currentStore, saleItems, sale.payment);
+        
+        // Respaldar en Firebase
+        await backupSaleToFirebase(sale);
+        
+        // Resetear formulario
+        saleItems = [];
+        paymentSelect.selectedIndex = 0;
+        manualTimeInput.value = '';
+        quantityInput.value = '1';
+        
+        // Actualizar UI
+        updateSaleItemsDisplay();
+        loadLastSale();
+        
+        showToast('Venta guardada exitosamente!', 'success');
+      } catch (error) {
+        showToast('Error al guardar la venta', 'error');
+        console.error('Error:', error);
+      }
     }
     
     function clearAllItems() {
@@ -1436,7 +1446,6 @@
       saveLocalStorageData();
       
       // Actualizar UI
-      updateStats();
       loadSales();
       loadLastSale();
       
@@ -1480,7 +1489,6 @@
           saveLocalStorageData();
           
           // Actualizar UI
-          updateStats();
           loadSales();
           loadLastSale();
           editSaleModal.classList.remove('show');
@@ -1489,15 +1497,33 @@
       }
     }
     
-    function loadSales() {
+    async function loadSales() {
       const startDate = new Date(startDateInput.value);
       const endDate = new Date(endDateInput.value);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
       
-      const store = storeFilter.value;
+      const store = isMasterUser ? storeFilter.value : currentStore;
       
       salesList.innerHTML = '';
       
+      // Si es admin, intentar cargar de Firebase primero
+      if (isMasterUser) {
+        try {
+          const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
+          if (firebaseSales.length > 0) {
+            displaySales(firebaseSales, store);
+            return;
+          }
+        } catch (error) {
+          console.error("Error al cargar de Firebase, mostrando localStorage:", error);
+        }
+      }
+      
+      // Cargar de localStorage si no es admin o si falló Firebase
+      loadSalesFromLocalStorage(store, startDate, endDate);
+    }
+    
+    function loadSalesFromLocalStorage(store, startDate, endDate) {
       // Recorrer todas las tiendas
       for (const [storeName, storeData] of Object.entries(salesData)) {
         // Filtrar por tienda si es necesario
@@ -1532,7 +1558,7 @@
             <div class="flex justify-between items-start">
               <div>
                 <div class="font-semibold">${formattedDate}</div>
-                <div class="text-sm text-gray-600">Usuario: ${sale.user}</div>
+                <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
               </div>
               <div class="flex gap-2">
                 <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
@@ -1595,7 +1621,6 @@
                 data.sales.splice(index, 1);
                 saveLocalStorageData();
                 loadSales();
-                updateStats();
                 loadLastSale();
                 showToast('Venta eliminada exitosamente', 'success');
                 return;
@@ -1604,6 +1629,79 @@
           }
         });
       });
+    }
+    
+    function displaySales(sales, storeFilter) {
+      if (sales.length === 0) {
+        salesList.innerHTML = `
+          <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-receipt text-3xl mb-2"></i>
+            <p>No hay ventas en el rango seleccionado</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Agrupar por tienda si es admin y se seleccionó "todas"
+      if (isMasterUser && storeFilter === 'all') {
+        const salesByStore = {};
+        
+        sales.forEach(sale => {
+          if (!salesByStore[sale.store]) {
+            salesByStore[sale.store] = [];
+          }
+          salesByStore[sale.store].push(sale);
+        });
+        
+        for (const [store, storeSales] of Object.entries(salesByStore)) {
+          const storeHeader = document.createElement('div');
+          storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+          storeHeader.textContent = `Tienda: ${store}`;
+          salesList.appendChild(storeHeader);
+          
+          storeSales.forEach(sale => createSaleElement(sale));
+        }
+      } else {
+        sales.forEach(sale => createSaleElement(sale));
+      }
+    }
+    
+    function createSaleElement(sale) {
+      const dateObj = new Date(sale.timestamp);
+      const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+      
+      let itemsHtml = sale.items.map(item => 
+        `<li>${item.quantity} ${item.category}</li>`
+      ).join('');
+      
+      const saleElement = document.createElement('div');
+      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+      saleElement.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="font-semibold">${formattedDate}</div>
+            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+            ${isMasterUser ? `<div class="text-sm text-gray-600">Tienda: ${sale.store}</div>` : ''}
+          </div>
+          <div class="flex gap-2">
+            <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-sale-btn bg-red-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mt-2">
+          <div class="font-semibold">Método de pago: ${sale.payment}</div>
+          <div class="font-semibold mt-1">Artículos:</div>
+          <ul class="list-disc pl-5">
+            ${itemsHtml}
+          </ul>
+        </div>
+      `;
+      
+      salesList.appendChild(saleElement);
     }
     
     function loadAdminSales() {
@@ -1649,7 +1747,7 @@
             <div class="flex justify-between items-start">
               <div>
                 <div class="font-semibold">${formattedDate}</div>
-                <div class="text-sm text-gray-600">Usuario: ${sale.user}</div>
+                <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
               </div>
             </div>
             <div class="mt-2">
@@ -1670,8 +1768,8 @@
       usersOnlineList.innerHTML = '';
       
       // Recorrer todas las tiendas
-      for (const [store, users] of Object.entries(activeSessions)) {
-        if (users.length === 0) continue;
+      for (const [store, usersList] of Object.entries(activeSessions)) {
+        if (usersList.length === 0) continue;
         
         // Encabezado de tienda
         const storeHeader = document.createElement('div');
@@ -1680,7 +1778,7 @@
         usersOnlineList.appendChild(storeHeader);
         
         // Usuarios por tienda
-        users.forEach(user => {
+        usersList.forEach(user => {
           const userElement = document.createElement('div');
           userElement.className = 'bg-white p-4 rounded-lg shadow border border-gray-200';
           userElement.innerHTML = `
@@ -1688,7 +1786,7 @@
               <div>
                 <div class="font-medium flex items-center">
                   <span class="online-status online"></span>
-                  ${user}
+                  ${users[user]?.displayName || user}
                 </div>
                 <div class="text-sm text-gray-600">${store}</div>
               </div>
@@ -1712,7 +1810,7 @@
             activeSessions[store] = activeSessions[store].filter(u => u !== user);
             localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
             loadOnlineUsers();
-            showToast(`Usuario ${user} desconectado de ${store}`, 'success');
+            showToast(`Usuario ${users[user]?.displayName || user} desconectado de ${store}`, 'success');
           }
         });
       });
@@ -1728,8 +1826,8 @@
       // Crear array de datos para la hoja
       const excelData = [];
       
-      // Encabezados
-      const headers = ['ID', 'Fecha', 'Hora', 'Usuario', 'Método de Pago', ...categories];
+      // Encabezados modificados: Fecha, Hora, Ubicación (en lugar de ID), Método de Pago, ...categorías
+      const headers = ['Fecha', 'Hora', 'Ubicación', 'Método de Pago', ...categories];
       excelData.push(headers);
       
       // Llenar filas
@@ -1738,7 +1836,8 @@
         const date = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
         const time = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
         
-        const row = [sale.id, date, time, sale.user, sale.payment];
+        // Filas modificadas: en lugar de sale.id, ponemos la ubicación de la tienda
+        const row = [date, time, storeName, sale.payment];
         
         // Inicializar contadores de categorías
         const categoryCounts = {};
@@ -1808,6 +1907,13 @@
       adminStartDate.value = today;
       adminEndDate.value = today;
 
+      // Intentar cargar sesión al iniciar
+      if (loadSession()) {
+        showMainContent();
+      } else {
+        loginScreen.classList.remove('hidden');
+      }
+
       // Login
       loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -1824,14 +1930,14 @@
         const user = users[username];
         if (user && user.password === password) {
           // Verificar si el usuario tiene acceso a la tienda
-          if (username !== 'admin' && !user.stores.includes(store)) {
+          if (username !== 'admin@accesorios.com' && !user.stores.includes(store)) {
             errorMessage.textContent = 'No tiene acceso a esta tienda';
             errorMessage.classList.remove('hidden');
             return;
           }
           
           // Verificar límite de sesiones por tienda (solo si no es admin)
-          if (username !== 'admin') {
+          if (username !== 'admin@accesorios.com') {
             if (activeSessions[store] && activeSessions[store].length >= 2) {
               errorMessage.textContent = 'Límite de usuarios alcanzado para esta tienda';
               errorMessage.classList.remove('hidden');
@@ -1841,7 +1947,7 @@
           
           currentUserData = username;
           currentStore = store;
-          isMasterUser = username === 'admin';
+          isMasterUser = username === 'admin@accesorios.com';
           saveSession(username, store);
           showMainContent();
         } else {
@@ -1889,6 +1995,9 @@
         storeFilter.value = 'all';
         loadSales();
       });
+      
+      // Sincronizar con Firebase
+      syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
       
       // Panel de administración
       adminPanelBtn.addEventListener('click', () => {
