@@ -923,16 +923,18 @@
 
     // Funciones Firebase
     async function backupSaleToFirebase(sale) {
-      try {
-        await db.collection('ventas').add({
-          ...sale,
-          backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log("Venta respaldada en Firebase");
-      } catch (error) {
-        console.error("Error al respaldar venta:", error);
-      }
-    }
+  try {
+    const docRef = await db.collection('ventas').add({
+      ...sale,
+      backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log("Venta respaldada en Firebase con ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error al respaldar venta:", error);
+    return null;
+  }
+}
 
     async function getSalesFromFirebase(store = 'all', startDate, endDate) {
       try {
@@ -953,25 +955,27 @@
       }
     }
 
-    async function syncAllSalesToFirebase() {
-      if (!isMasterUser) return;
-      
-      try {
-        let total = 0;
-        
-        for (const [store, storeData] of Object.entries(salesData)) {
-          for (const sale of storeData.sales) {
-            await backupSaleToFirebase(sale);
-            total++;
-          }
-        }
-        
-        showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
-      } catch (error) {
-        showToast('Error al sincronizar ventas', 'error');
-        console.error("Error:", error);
-      }
+    async function getSalesFromFirebase(store = 'all', startDate, endDate) {
+  try {
+    let query = db.collection('ventas')
+      .where('timestamp', '>=', startDate.toISOString())
+      .where('timestamp', '<=', endDate.toISOString())
+      .orderBy('timestamp', 'desc');
+
+    if (store !== 'all') {
+      query = query.where('store', '==', store);
     }
+
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, // Usar el ID de Firebase como referencia
+      ...doc.data() 
+    }));
+  } catch (error) {
+    console.error("Error al obtener ventas:", error);
+    return [];
+  }
+}
 
     // Almacenamiento local
     function getLocalStorageData() {
@@ -1714,65 +1718,163 @@
       salesList.appendChild(saleElement);
     }
     
-    function loadAdminSales() {
-      const startDate = new Date(adminStartDate.value);
-      const endDate = new Date(adminEndDate.value);
-      endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
-      
-      const store = adminStoreFilter.value;
-      
-      adminSalesList.innerHTML = '';
-      
-      // Recorrer todas las tiendas
+    // Reemplaza la función loadAdminSales() con esta versión mejorada
+async function loadAdminSales() {
+  const startDate = new Date(adminStartDate.value);
+  const endDate = new Date(adminEndDate.value);
+  endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
+  
+  const store = adminStoreFilter.value;
+  
+  adminSalesList.innerHTML = '<div class="text-center py-4 text-gray-500">Cargando ventas...</div>';
+  
+  try {
+    // 1. Intentar cargar de Firebase primero
+    let sales = [];
+    
+    if (store === 'all') {
+      // Cargar todas las tiendas
+      const allStores = ['506', 'centro', 'pavas', 'terramall', 'escazu', 'hot', 'desamparados', 'canonazo', 'sabanilla'];
+      const promises = allStores.map(s => getSalesFromFirebase(s, startDate, endDate));
+      const results = await Promise.all(promises);
+      sales = results.flat();
+    } else {
+      // Cargar solo la tienda seleccionada
+      sales = await getSalesFromFirebase(store, startDate, endDate);
+    }
+    
+    // 2. Si no hay datos en Firebase, cargar del localStorage
+    if (sales.length === 0) {
+      sales = [];
       for (const [storeName, storeData] of Object.entries(salesData)) {
-        // Filtrar por tienda si es necesario
         if (store !== 'all' && store !== storeName) continue;
         
-        // Filtrar ventas por fecha
         const filteredSales = storeData.sales.filter(sale => {
           const saleDate = new Date(sale.timestamp);
           return saleDate >= startDate && saleDate < endDate;
         });
         
-        if (filteredSales.length === 0) continue;
-        
-        // Crear encabezado de tienda
+        sales.push(...filteredSales);
+      }
+    }
+    
+    // 3. Mostrar los resultados
+    adminSalesList.innerHTML = '';
+    
+    if (sales.length === 0) {
+      adminSalesList.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-receipt text-3xl mb-2"></i>
+          <p>No hay ventas en el rango seleccionado</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Agrupar por tienda si se seleccionó "todas"
+    if (store === 'all') {
+      const salesByStore = {};
+      
+      sales.forEach(sale => {
+        if (!salesByStore[sale.store]) {
+          salesByStore[sale.store] = [];
+        }
+        salesByStore[sale.store].push(sale);
+      });
+      
+      for (const [storeName, storeSales] of Object.entries(salesByStore)) {
         const storeHeader = document.createElement('div');
         storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
         storeHeader.textContent = `Tienda: ${storeName}`;
         adminSalesList.appendChild(storeHeader);
         
-        // Agregar ventas
-        filteredSales.forEach(sale => {
-          const dateObj = new Date(sale.timestamp);
-          const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-          
-          let itemsHtml = sale.items.map(item => 
-            `<li>${item.quantity} ${item.category}</li>`
-          ).join('');
-          
-          const saleElement = document.createElement('div');
-          saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-          saleElement.innerHTML = `
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-semibold">${formattedDate}</div>
-                <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-              </div>
-            </div>
-            <div class="mt-2">
-              <div class="font-semibold">Método de pago: ${sale.payment}</div>
-              <div class="font-semibold mt-1">Artículos:</div>
-              <ul class="list-disc pl-5">
-                ${itemsHtml}
-              </ul>
-            </div>
-          `;
-          
-          adminSalesList.appendChild(saleElement);
-        });
+        storeSales.forEach(sale => createAdminSaleElement(sale));
+      }
+    } else {
+      sales.forEach(sale => createAdminSaleElement(sale));
+    }
+    
+  } catch (error) {
+    console.error("Error al cargar ventas:", error);
+    adminSalesList.innerHTML = `
+      <div class="text-center py-8 text-red-500">
+        <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+        <p>Error al cargar ventas</p>
+        <p class="text-sm mt-2">${error.message}</p>
+      </div>
+    `;
+  }
+}
+
+// Función auxiliar para crear elementos de venta en el panel admin
+function createAdminSaleElement(sale) {
+  const dateObj = new Date(sale.timestamp);
+  const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+  
+  let itemsHtml = sale.items.map(item => 
+    `<li>${item.quantity} ${item.category}</li>`
+  ).join('');
+  
+  const saleElement = document.createElement('div');
+  saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+  saleElement.innerHTML = `
+    <div class="flex justify-between items-start">
+      <div>
+        <div class="font-semibold">${formattedDate}</div>
+        <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+        <div class="text-sm text-gray-600">Tienda: ${sale.store}</div>
+      </div>
+      <div class="flex gap-2">
+        <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="delete-sale-btn bg-red-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div class="mt-2">
+      <div class="font-semibold">Método de pago: ${sale.payment}</div>
+      <div class="font-semibold mt-1">Artículos:</div>
+      <ul class="list-disc pl-5">
+        ${itemsHtml}
+      </ul>
+    </div>
+  `;
+  
+  // Agregar event listeners para los botones
+  saleElement.querySelector('.edit-sale-btn').addEventListener('click', () => {
+    openEditModal(sale.id);
+  });
+  
+  saleElement.querySelector('.delete-sale-btn').addEventListener('click', async () => {
+    if (confirm('¿Estás seguro de eliminar esta venta?')) {
+      try {
+        // Eliminar de Firebase si existe allí
+        if (sale.id) {
+          await db.collection('ventas').doc(sale.id).delete();
+        }
+        
+        // Eliminar del localStorage si existe allí
+        for (const [store, data] of Object.entries(salesData)) {
+          const index = data.sales.findIndex(s => s.id === sale.id);
+          if (index !== -1) {
+            data.sales.splice(index, 1);
+          }
+        }
+        
+        saveLocalStorageData();
+        loadAdminSales();
+        showToast('Venta eliminada exitosamente', 'success');
+      } catch (error) {
+        showToast('Error al eliminar venta', 'error');
+        console.error(error);
       }
     }
+  });
+  
+  adminSalesList.appendChild(saleElement);
+}
     
     function loadOnlineUsers() {
       usersOnlineList.innerHTML = '';
