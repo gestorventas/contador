@@ -7,13 +7,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   
   <style>
-    /* Estilos CSS anteriores se mantienen igual */
     body {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -211,6 +212,24 @@
       .analytics-grid {
         grid-template-columns: 1fr;
       }
+    }
+    
+    /* Nuevo estilo para el botón de exportación */
+    .export-btn {
+      background: linear-gradient(to right, #10b981, #3b82f6);
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -690,8 +709,8 @@
             </div>
           </div>
           <div class="flex justify-end mb-4">
-            <button id="admin-export-all" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
-              <i class="fas fa-file-excel mr-2"></i> Exportar todas las ventas
+            <button id="admin-export-all" class="export-btn">
+              <i class="fas fa-file-archive mr-2"></i> Exportar todas las ventas (ZIP)
             </button>
           </div>
           <div id="admin-sales-list" class="space-y-3">
@@ -1889,7 +1908,8 @@
       });
     }
     
-    function exportStoreToExcel(storeName, storeData) {
+    // Función para generar el libro de Excel para una tienda
+    function generateWorkbookForStore(storeName, storeData) {
       // Definir categorías para las columnas
       const categories = [
         'Articulos', 'Articulos (P)', 'Bisuteria', 'Bisuteria (P)', 
@@ -1935,11 +1955,49 @@
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(excelData);
       XLSX.utils.book_append_sheet(wb, ws, storeName);
-      
-      // Generar archivo y descargar
-      XLSX.writeFile(wb, `${storeName}_ventas.xlsx`);
+      return wb;
     }
     
+    // Función para exportar una tienda individual
+    function exportStoreToExcel(storeName, storeData) {
+      if (!storeData || storeData.sales.length === 0) {
+        showToast('No hay ventas para exportar', 'error');
+        return;
+      }
+      
+      const wb = generateWorkbookForStore(storeName, storeData);
+      XLSX.writeFile(wb, `${storeName}_ventas.xlsx`);
+      showToast('Exportación completada', 'success');
+    }
+    
+    // Función para exportar todas las tiendas en un ZIP
+    async function exportAllStoresToExcel() {
+      const zip = new JSZip();
+      let hasData = false;
+      
+      // Recorrer todas las tiendas
+      for (const [storeName, storeData] of Object.entries(salesData)) {
+        if (storeData.sales.length > 0) {
+          hasData = true;
+          const wb = generateWorkbookForStore(storeName, storeData);
+          const excelBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
+          zip.file(`${storeName}_ventas.xlsx`, excelBlob);
+        }
+      }
+      
+      if (!hasData) {
+        showToast('No hay ventas para exportar', 'error');
+        return;
+      }
+      
+      // Generar y descargar el archivo ZIP
+      zip.generateAsync({type: "blob"}).then(content => {
+        saveAs(content, "todas_las_tiendas_ventas.zip");
+        showToast('Todas las tiendas exportadas en un archivo ZIP', 'success');
+      });
+    }
+    
+    // Función para exportar la tienda actual
     function exportToExcel() {
       const storeData = salesData[currentStore];
       if (!storeData || storeData.sales.length === 0) {
@@ -1948,27 +2006,8 @@
       }
       
       exportStoreToExcel(currentStore, storeData);
-      showToast('Exportación completada', 'success');
     }
     
-    function exportAllStoresToExcel() {
-      let hasData = false;
-      
-      for (const [storeName, storeData] of Object.entries(salesData)) {
-        if (storeData.sales.length > 0) {
-          // Exportar cada tienda en un archivo separado
-          exportStoreToExcel(storeName, storeData);
-          hasData = true;
-        }
-      }
-      
-      if (hasData) {
-        showToast('Todas las tiendas exportadas', 'success');
-      } else {
-        showToast('No hay ventas para exportar', 'error');
-      }
-    }
-
     // Inicializar
     document.addEventListener('DOMContentLoaded', () => {
       // Cargar sesiones activas
@@ -2094,7 +2133,7 @@
         loadAdminSales();
       });
       
-      // Exportar todas las ventas
+      // Exportar todas las ventas (nueva funcionalidad)
       adminExportAll.addEventListener('click', exportAllStoresToExcel);
       
       // Cerrar modal de edición
