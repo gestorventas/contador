@@ -13,6 +13,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   
   <style>
+    /* Estilos CSS anteriores se mantienen igual */
     body {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -1768,47 +1769,27 @@
           salesByStore[sale.store].push(sale);
         });
         
-        for (const [storeName, storeSales] of Object.entries(salesByStore)) {
-          // Solo mostrar tiendas si se seleccionó "todas" o si coincide con la tienda seleccionada
-          if (store === 'all' || store === storeName) {
+        // Mostrar todas las tiendas si se seleccionó "todas"
+        if (store === 'all') {
+          for (const [storeName, storeSales] of Object.entries(salesByStore)) {
             // Encabezado de tienda
             const storeHeader = document.createElement('div');
             storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
             storeHeader.textContent = `Tienda: ${storeName}`;
             adminSalesList.appendChild(storeHeader);
             
-            storeSales.forEach(sale => {
-              const dateObj = new Date(sale.timestamp);
-              let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-              
-              // Usar hora manual si existe
-              if (sale.manualTime) {
-                formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-              }
-              
-              let itemsHtml = sale.items.map(item => 
-                `<li>${item.quantity} ${item.category}</li>`
-              ).join('');
-              
-              const saleElement = document.createElement('div');
-              saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-              saleElement.innerHTML = `
-                <div class="flex justify-between items-start">
-                  <div>
-                    <div class="font-semibold">${formattedDate}</div>
-                    <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-                  </div>
-                </div>
-                <div class="mt-2">
-                  <div class="font-semibold">Método de pago: ${sale.payment}</div>
-                  <div class="font-semibold mt-1">Artículos:</div>
-                  <ul class="list-disc pl-5">
-                    ${itemsHtml}
-                  </ul>
-                </div>
-              `;
-              adminSalesList.appendChild(saleElement);
-            });
+            storeSales.forEach(sale => createAdminSaleElement(sale));
+          }
+        } else {
+          // Mostrar solo la tienda seleccionada
+          if (salesByStore[store] && salesByStore[store].length > 0) {
+            // Encabezado de tienda
+            const storeHeader = document.createElement('div');
+            storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+            storeHeader.textContent = `Tienda: ${store}`;
+            adminSalesList.appendChild(storeHeader);
+            
+            salesByStore[store].forEach(sale => createAdminSaleElement(sale));
           }
         }
       } catch (error) {
@@ -1820,6 +1801,40 @@
           </div>
         `;
       }
+    }
+    
+    function createAdminSaleElement(sale) {
+      const dateObj = new Date(sale.timestamp);
+      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+      
+      // Usar hora manual si existe
+      if (sale.manualTime) {
+        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
+      }
+      
+      let itemsHtml = sale.items.map(item => 
+        `<li>${item.quantity} ${item.category}</li>`
+      ).join('');
+      
+      const saleElement = document.createElement('div');
+      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+      saleElement.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="font-semibold">${formattedDate}</div>
+            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+            <div class="text-sm text-gray-600">Tienda: ${sale.store}</div>
+          </div>
+        </div>
+        <div class="mt-2">
+          <div class="font-semibold">Método de pago: ${sale.payment}</div>
+          <div class="font-semibold mt-1">Artículos:</div>
+          <ul class="list-disc pl-5">
+            ${itemsHtml}
+          </ul>
+        </div>
+      `;
+      adminSalesList.appendChild(saleElement);
     }
     
     function loadOnlineUsers() {
@@ -1941,6 +1956,7 @@
       
       for (const [storeName, storeData] of Object.entries(salesData)) {
         if (storeData.sales.length > 0) {
+          // Exportar cada tienda en un archivo separado
           exportStoreToExcel(storeName, storeData);
           hasData = true;
         }
