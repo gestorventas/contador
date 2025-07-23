@@ -1953,175 +1953,100 @@
       }
     }
 
-    // Inicializar
-    document.addEventListener('DOMContentLoaded', () => {
-      // Cargar sesiones activas
-      activeSessions = JSON.parse(localStorage.getItem('activeSessions') || '{}');
+    // Función corregida: Filtra correctamente por tienda en el panel admin
+    async function loadAdminSales() {
+      const startDate = new Date(adminStartDate.value);
+      const endDate = new Date(adminEndDate.value);
+      endDate.setDate(endDate.getDate() + 1);
       
-      // Configurar fecha actual en los filtros
-      const today = new Date().toISOString().split('T')[0];
-      startDateInput.value = today;
-      endDateInput.value = today;
-      adminStartDate.value = today;
-      adminEndDate.value = today;
-
-      // Intentar cargar sesión al iniciar
-      if (loadSession()) {
-        showMainContent();
-      } else {
-        loginScreen.classList.remove('hidden');
-      }
-
-      // Login
-      loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value;
-        const store = storeSelect.value;
+      const store = adminStoreFilter.value;
+      
+      adminSalesList.innerHTML = '';
+      
+      try {
+        const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
         
-        if (!username || !password || !store) {
-          errorMessage.textContent = 'Usuario, contraseña y tienda requeridos';
-          errorMessage.classList.remove('hidden');
+        if (firebaseSales.length === 0) {
+          adminSalesList.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+              <i class="fas fa-receipt text-3xl mb-2"></i>
+              <p>No hay ventas en el rango seleccionado</p>
+            </div>
+          `;
           return;
         }
-        
-        const user = users[username];
-        if (user && user.password === password) {
-          // Verificar si el usuario tiene acceso a la tienda
-          if (username !== 'admin@accesorios.com' && !user.stores.includes(store)) {
-            errorMessage.textContent = 'No tiene acceso a esta tienda';
-            errorMessage.classList.remove('hidden');
-            return;
-          }
+
+        // Filtrado corregido: Agrupa solo si es "all", sino muestra solo la tienda seleccionada
+        if (store === 'all') {
+          const salesByStore = {};
           
-          // Verificar límite de sesiones por tienda (solo si no es admin)
-          if (username !== 'admin@accesorios.com') {
-            if (activeSessions[store] && activeSessions[store].length >= 2) {
-              errorMessage.textContent = 'Límite de usuarios alcanzado para esta tienda';
-              errorMessage.classList.remove('hidden');
-              return;
+          firebaseSales.forEach(sale => {
+            if (!salesByStore[sale.store]) {
+              salesByStore[sale.store] = [];
             }
-          }
+            salesByStore[sale.store].push(sale);
+          });
           
-          currentUserData = username;
-          currentStore = store;
-          isMasterUser = username === 'admin@accesorios.com';
-          saveSession(username, store);
-          showMainContent();
+          for (const [storeName, storeSales] of Object.entries(salesByStore)) {
+            const storeHeader = document.createElement('div');
+            storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+            storeHeader.textContent = `Tienda: ${storeName}`;
+            adminSalesList.appendChild(storeHeader);
+            
+            storeSales.forEach(sale => createAdminSaleElement(sale));
+          }
         } else {
-          errorMessage.textContent = 'Credenciales incorrectas';
-          errorMessage.classList.remove('hidden');
+          // Mostrar solo la tienda seleccionada
+          const storeHeader = document.createElement('div');
+          storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+          storeHeader.textContent = `Tienda: ${store}`;
+          adminSalesList.appendChild(storeHeader);
+          
+          firebaseSales.forEach(sale => createAdminSaleElement(sale));
         }
-      });
-
-      // Logout
-      logoutBtn.addEventListener('click', () => {
-        clearSession();
-        mainContent.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        showToast('Sesión cerrada', 'success');
-      });
-
-      // Agregar categoría a venta
-      addCategoryBtn.addEventListener('click', addSaleItem);
-
-      // Guardar venta
-      saveSaleBtn.addEventListener('click', saveSale);
-
-      // Exportar a Excel
-      exportExcelBtn.addEventListener('click', exportToExcel);
-
-      // Limpiar todo
-      clearAllBtn.addEventListener('click', clearAllItems);
-
-      // Ver ventas
-      viewSalesBtn.addEventListener('click', () => {
-        salesModal.classList.add('show');
-        loadSales();
-      });
-
-      // Cerrar modal de ventas
-      closeSalesModal.addEventListener('click', () => {
-        salesModal.classList.remove('show');
-      });
-      
-      // Aplicar filtros en ventas
-      applyFilterBtn.addEventListener('click', loadSales);
-      clearFilterBtn.addEventListener('click', () => {
-        startDateInput.value = today;
-        endDateInput.value = today;
-        storeFilter.value = 'all';
-        loadSales();
-      });
-      
-      // Sincronizar con Firebase
-      syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
-      
-      // Panel de administración
-      adminPanelBtn.addEventListener('click', () => {
-        adminModal.classList.add('show');
-        loadOnlineUsers(); // Cargar usuarios conectados
-        loadAdminSales();
-      });
-
-      // Cerrar modal admin
-      closeAdminModal.addEventListener('click', () => {
-        adminModal.classList.remove('show');
-      });
-      
-      // Aplicar filtros en admin
-      adminApplyFilter.addEventListener('click', loadAdminSales);
-      adminClearFilter.addEventListener('click', () => {
-        adminStartDate.value = today;
-        adminEndDate.value = today;
-        adminStoreFilter.value = 'all';
-        loadAdminSales();
-      });
-      
-      // Exportar todas las ventas
-      adminExportAll.addEventListener('click', exportAllStoresToExcel);
-      
-      // Cerrar modal de edición
-      closeEditModal.addEventListener('click', () => {
-        editSaleModal.classList.remove('show');
-      });
-      
-      // Cambiar cantidad
-      decreaseQtyBtn.addEventListener('click', () => {
-        const current = parseInt(quantityInput.value) || 1;
-        if (current > 1) {
-          quantityInput.value = current - 1;
-        }
-      });
-      
-      increaseQtyBtn.addEventListener('click', () => {
-        const current = parseInt(quantityInput.value) || 1;
-        quantityInput.value = current + 1;
-      });
-      
-      // Agregar ítem en edición
-      addEditItemBtn.addEventListener('click', () => {
-        const itemElement = document.createElement('div');
-        itemElement.className = 'edit-item-row';
-        itemElement.innerHTML = `
-          <select class="p-2 border border-gray-300 rounded-lg flex-1 edit-item-category">
-            <option value="Articulos">Artículos</option>
-            <option value="Articulos (P)">Artículos (P)</option>
-            <option value="Bisuteria">Bisutería</option>
-            <option value="Bisuteria (P)">Bisutería (P)</option>
-            <option value="Zapato">Zapato</option>
-            <option value="Zapato (P)">Zapato (P)</option>
-            <option value="Prenda">Prenda</option>
-            <option value="Prenda (P)">Prenda (P)</option>
-            <option value="B.Eco">B.Eco</option>
-          </select>
-          <input type="number" min="1" value="1" class="w-20 p-2 border border-gray-300 rounded-lg edit-item-quantity">
-          <button class="remove-edit-item bg-red-100 text-red-600 p-2 rounded-lg">
-            <i class="fas fa-trash"></i>
-          </button>
+      } catch (error) {
+        console.error("Error al obtener ventas:", error);
+        adminSalesList.innerHTML = `
+          <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+            <p>Error al cargar ventas</p>
+          </div>
         `;
-        editItemsContainer.appendChild(itemElement);
-        
+      }
+    }
+
+    // Función auxiliar para crear elementos de venta en admin
+    function createAdminSaleElement(sale) {
+      const dateObj = new Date(sale.timestamp);
+      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+      
+      if (sale.manualTime) {
+        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
+      }
+      
+      let itemsHtml = sale.items.map(item => 
+        `<li>${item.quantity} ${item.category}</li>`
+      ).join('');
+      
+      const saleElement = document.createElement('div');
+      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+      saleElement.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="font-semibold">${formattedDate}</div>
+            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+          </div>
+        </div>
+        <div class="mt-2">
+          <div class="font-semibold">Método de pago: ${sale.payment}</div>
+          <div class="font-semibold mt-1">Artículos:</div>
+          <ul class="list-disc pl-5">
+            ${itemsHtml}
+          </ul>
+        </div>
+      `;
+      adminSalesList.appendChild(saleElement);
+    }
         // Agregar evento de eliminación
         itemElement.querySelector('.remove-edit-item').addEventListener('click', () => {
           itemElement.remove();
@@ -2151,6 +2076,7 @@
       const events = ['mousemove', 'keydown', 'click', 'scroll'];
       events.forEach(event => {
         document.addEventListener(event, resetInactivityTimer);
+		
       });
     });
   })();
