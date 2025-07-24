@@ -1175,15 +1175,33 @@
         return;
       }
       
-      // Crear objeto de venta
+      // Crear objeto de venta con prioridad a la hora manual
+      const manualTime = manualTimeInput.value;
+      let saleTimestamp;
+      
+      if (manualTime) {
+        // Combinar la fecha actual con la hora manual
+        const today = new Date();
+        const [hours, minutes] = manualTime.split(':').map(Number);
+        saleTimestamp = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+          hours,
+          minutes
+        ).toISOString();
+      } else {
+        saleTimestamp = new Date().toISOString();
+      }
+
       const sale = {
         id: Date.now(),
         store: currentStore,
         user: currentUserData,
         items: [...saleItems],
         payment: paymentSelect.value,
-        manualTime: manualTimeInput.value || null,
-        timestamp: new Date().toISOString()
+        manualTime: manualTime || null,  // Guardar la hora manual
+        timestamp: saleTimestamp         // Usar la hora combinada
       };
       
       // Guardar venta
@@ -1228,6 +1246,7 @@
       }
       
       const lastSale = sales[sales.length - 1];
+      // Formatear la fecha usando la hora almacenada en timestamp
       const date = new Date(lastSale.timestamp);
       const formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
       
@@ -1348,6 +1367,20 @@
       // Actualizar otros campos
       saleToEdit.payment = editPayment.value;
       saleToEdit.manualTime = editManualTime.value || null;
+      
+      // Actualizar la hora si se modificó
+      if (editManualTime.value) {
+        const originalDate = new Date(saleToEdit.timestamp);
+        const [hours, minutes] = editManualTime.value.split(':').map(Number);
+        
+        saleToEdit.timestamp = new Date(
+          originalDate.getFullYear(),
+          originalDate.getMonth(),
+          originalDate.getDate(),
+          hours,
+          minutes
+        ).toISOString();
+      }
       
       // Verificar si la venta es de hoy
       const today = new Date().toISOString().split('T')[0];
@@ -1547,13 +1580,24 @@
     }
     
     function loadAdminSales() {
-      const startDate = new Date(adminStartDate.value);
-      const endDate = new Date(adminEndDate.value);
+      const startDateStr = adminStartDate.value;
+      const endDateStr = adminEndDate.value;
+      
+      // Validar fechas
+      if (!startDateStr || !endDateStr) {
+        showToast('Seleccione fechas válidas', 'error');
+        return;
+      }
+      
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
       
       const store = adminStoreFilter.value;
       
       adminSalesList.innerHTML = '';
+      
+      let hasSales = false;
       
       // Recorrer todas las tiendas
       for (const [storeName, storeData] of Object.entries(salesData)) {
@@ -1567,6 +1611,7 @@
         });
         
         if (filteredSales.length === 0) continue;
+        hasSales = true;
         
         // Crear encabezado de tienda
         const storeHeader = document.createElement('div');
@@ -1603,6 +1648,10 @@
           
           adminSalesList.appendChild(saleElement);
         });
+      }
+      
+      if (!hasSales) {
+        adminSalesList.innerHTML = '<p class="text-center py-8 text-gray-500">No se encontraron ventas</p>';
       }
     }
     
