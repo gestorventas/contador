@@ -7,13 +7,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            secondary: '#10b981',
+            accent: '#8b5cf6',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            dark: '#1f2937',
+          }
+        }
+      }
+    }
+  </script>
   <style>
     body {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -213,24 +222,6 @@
         grid-template-columns: 1fr;
       }
     }
-    
-    /* Nuevo estilo para el botón de exportación */
-    .export-btn {
-      background: linear-gradient(to right, #10b981, #3b82f6);
-      color: white;
-      padding: 0.5rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.3s ease;
-    }
-    
-    .export-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -365,12 +356,12 @@
         <div>
           <label class="block font-semibold text-gray-700 mb-2">Cantidad</label>
           <div class="flex">
-            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg hover:bg-gray-300">
+            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg">
               <i class="fas fa-minus"></i>
             </button>
             <input type="number" id="item-quantity" min="1" value="1" 
                    class="w-full p-2 border-y border-gray-300 text-center focus:outline-none">
-            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg hover:bg-gray-300">
+            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg">
               <i class="fas fa-plus"></i>
             </button>
           </div>
@@ -579,9 +570,6 @@
           <button id="clear-filter" class="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 flex items-center">
             <i class="fas fa-undo mr-2"></i> Limpiar
           </button>
-          <button id="sync-firebase-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
-            <i class="fas fa-sync-alt mr-2"></i> Sincronizar
-          </button>
         </div>
       </div>
       
@@ -709,8 +697,8 @@
             </div>
           </div>
           <div class="flex justify-end mb-4">
-            <button id="admin-export-all" class="export-btn">
-              <i class="fas fa-file-archive mr-2"></i> Exportar todas las ventas (ZIP)
+            <button id="admin-export-all" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+              <i class="fas fa-file-excel mr-2"></i> Exportar todas las ventas
             </button>
           </div>
           <div id="admin-sales-list" class="space-y-3">
@@ -723,36 +711,13 @@
 
   <script>
   (() => {
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyDjlI3qysLRd41TW3QTImB2XvdrhZ6PV8g",
-      authDomain: "contador-214a3.firebaseapp.com",
-      projectId: "contador-214a3",
-      storageBucket: "contador-214a3.firebasestorage.app",
-      messagingSenderId: "909890810354",
-      appId: "1:909890810354:web:007e7efd4281b25356bb6b"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
     // Variables y DOM
     const users = { 
+      // Credenciales con correos ficticios y contraseñas aleatorias
       'admin@accesorios.com': { 
         password: 'AdminSecure123!', 
         stores: ['all'],
         displayName: 'Admin'
-      },
-      'tienda506@accesorios.com': { 
-        password: 'T5062263', 
-        stores: ['506'],
-        displayName: '506-1'
-      },
-      'tienda506-2@accesorios.com': { 
-        password: 'T5062263*', 
-        stores: ['506'],
-        displayName: '506-2'
       },
       'centro1@accesorios.com': { 
         password: 'Centro1Pass456$', 
@@ -836,51 +801,49 @@
       }
     };
     
-    // Referencias a elementos DOM
-    const loginForm = document.getElementById('login-form');
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
-    const storeSelect = document.getElementById('selected-store');
-    const errorMessage = document.getElementById('error-message');
-    const loginScreen = document.getElementById('login-screen');
-    const mainContent = document.getElementById('main-content');
-    const logoutBtn = document.getElementById('logout-btn');
+    const loginForm      = document.getElementById('login-form');
+    const usernameInput  = document.getElementById('username');
+    const passwordInput  = document.getElementById('password');
+    const storeSelect    = document.getElementById('selected-store');
+    const errorMessage   = document.getElementById('error-message');
+    const loginScreen    = document.getElementById('login-screen');
+    const mainContent    = document.getElementById('main-content');
+    const logoutBtn      = document.getElementById('logout-btn');
     const categorySelect = document.getElementById('selected-category');
-    const quantityInput = document.getElementById('item-quantity');
+    const quantityInput  = document.getElementById('item-quantity');
     const addCategoryBtn = document.getElementById('add-category');
-    const paymentSelect = document.getElementById('selected-payment');
-    const manualTimeInput = document.getElementById('manual-time');
-    const saveSaleBtn = document.getElementById('save-sale');
+    const paymentSelect  = document.getElementById('selected-payment');
+    const manualTimeInput= document.getElementById('manual-time');
+    const saveSaleBtn    = document.getElementById('save-sale');
     const exportExcelBtn = document.getElementById('export-excel');
-    const clearAllBtn = document.getElementById('clear-all');
-    const viewSalesBtn = document.getElementById('view-sales');
-    const salesModal = document.getElementById('sales-modal');
-    const salesList = document.getElementById('sales-list');
+    const clearAllBtn    = document.getElementById('clear-all');
+    const viewSalesBtn   = document.getElementById('view-sales');
+    const salesModal     = document.getElementById('sales-modal');
+    const salesList      = document.getElementById('sales-list');
     const startDateInput = document.getElementById('start-date');
-    const endDateInput = document.getElementById('end-date');
-    const storeFilter = document.getElementById('store-filter');
+    const endDateInput   = document.getElementById('end-date');
+    const storeFilter    = document.getElementById('store-filter');
     const storeFilterContainer = document.getElementById('store-filter-container');
     const applyFilterBtn = document.getElementById('apply-filter');
     const clearFilterBtn = document.getElementById('clear-filter');
-    const syncFirebaseBtn = document.getElementById('sync-firebase-btn');
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
-    const adminPanelBtn = document.getElementById('admin-panel-btn');
-    const adminModal = document.getElementById('admin-modal');
-    const usersOnlineList = document.getElementById('users-online-list');
+    const toast          = document.getElementById('toast');
+    const toastMessage   = document.getElementById('toast-message');
+    const adminPanelBtn  = document.getElementById('admin-panel-btn');
+    const adminModal     = document.getElementById('admin-modal');
+    const usersOnlineList= document.getElementById('users-online-list');
     const adminSalesList = document.getElementById('admin-sales-list');
     const adminStartDate = document.getElementById('admin-start-date');
-    const adminEndDate = document.getElementById('admin-end-date');
+    const adminEndDate   = document.getElementById('admin-end-date');
     const adminStoreFilter = document.getElementById('admin-store-filter');
     const adminApplyFilter = document.getElementById('admin-apply-filter');
     const adminClearFilter = document.getElementById('admin-clear-filter');
     const adminExportAll = document.getElementById('admin-export-all');
-    const userLocations = document.getElementById('user-locations');
-    const currentUser = document.getElementById('current-user');
+    const userLocations  = document.getElementById('user-locations');
+    const currentUser    = document.getElementById('current-user');
     const closeSalesModal = document.getElementById('close-sales-modal');
     const closeAdminModal = document.getElementById('close-admin-modal');
     const closeEditModal = document.getElementById('close-edit-modal');
-    const analyticsBtn = document.getElementById('analytics-btn');
+    const analyticsBtn   = document.getElementById('analytics-btn');
     const analyticsModal = document.getElementById('analytics-modal');
     const closeAnalyticsModal = document.getElementById('close-analytics-modal');
     const decreaseQtyBtn = document.getElementById('decrease-qty');
@@ -910,7 +873,6 @@
     const analyticsPaymentProgress = document.getElementById('analytics-payment-progress');
     const paymentMethodsDetails = document.getElementById('payment-methods-details');
 
-    // Variables de estado
     let currentUserData = null;
     let currentStore = '';
     let saleItems = [];
@@ -942,61 +904,7 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // Funciones Firebase
-    async function backupSaleToFirebase(sale) {
-      try {
-        await db.collection('ventas').add({
-          ...sale,
-          backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log("Venta respaldada en Firebase");
-      } catch (error) {
-        console.error("Error al respaldar venta:", error);
-        showToast('Error al respaldar venta', 'error');
-      }
-    }
-
-    async function getSalesFromFirebase(store = 'all', startDate, endDate) {
-      try {
-        let query = db.collection('ventas')
-          .where('timestamp', '>=', startDate.toISOString())
-          .where('timestamp', '<=', endDate.toISOString())
-          .orderBy('timestamp', 'desc');
-
-        if (store !== 'all') {
-          query = query.where('store', '==', store);
-        }
-
-        const snapshot = await query.get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      } catch (error) {
-        console.error("Error al obtener ventas:", error);
-        showToast('Error al cargar ventas', 'error');
-        return [];
-      }
-    }
-
-    async function syncAllSalesToFirebase() {
-      if (!isMasterUser) return;
-      
-      try {
-        let total = 0;
-        
-        for (const [store, storeData] of Object.entries(salesData)) {
-          for (const sale of storeData.sales) {
-            await backupSaleToFirebase(sale);
-            total++;
-          }
-        }
-        
-        showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
-      } catch (error) {
-        showToast('Error al sincronizar ventas', 'error');
-        console.error("Error:", error);
-      }
-    }
-
-    // Almacenamiento local
+    // Almacenamiento
     function getLocalStorageData() {
       const data = localStorage.getItem('salesData');
       return data ? JSON.parse(data) : {};
@@ -1256,7 +1164,7 @@
       });
     }
     
-    async function saveSale() {
+    function saveSale() {
       if (saleItems.length === 0) {
         showToast('Agregue artículos primero', 'error');
         return;
@@ -1278,33 +1186,25 @@
         timestamp: new Date().toISOString()
       };
       
-      try {
-        // Guardar venta en localStorage
-        initializeStoreData(currentStore);
-        salesData[currentStore].sales.push(sale);
-        saveLocalStorageData();
-        
-        // Actualizar estadísticas
-        updateStoreStats(currentStore, saleItems, sale.payment);
-        
-        // Respaldar en Firebase
-        await backupSaleToFirebase(sale);
-        
-        // Resetear formulario
-        saleItems = [];
-        paymentSelect.selectedIndex = 0;
-        manualTimeInput.value = '';
-        quantityInput.value = '1';
-        
-        // Actualizar UI
-        updateSaleItemsDisplay();
-        loadLastSale();
-        
-        showToast('Venta guardada exitosamente!', 'success');
-      } catch (error) {
-        showToast('Error al guardar la venta', 'error');
-        console.error('Error:', error);
-      }
+      // Guardar venta
+      initializeStoreData(currentStore);
+      salesData[currentStore].sales.push(sale);
+      saveLocalStorageData();
+      
+      // Actualizar estadísticas
+      updateStoreStats(currentStore, saleItems, sale.payment);
+      
+      // Resetear formulario
+      saleItems = [];
+      paymentSelect.selectedIndex = 0;
+      manualTimeInput.value = '';
+      quantityInput.value = '1';
+      
+      // Actualizar UI
+      updateSaleItemsDisplay();
+      loadLastSale();
+      
+      showToast('Venta guardada exitosamente!', 'success');
     }
     
     function clearAllItems() {
@@ -1329,12 +1229,7 @@
       
       const lastSale = sales[sales.length - 1];
       const date = new Date(lastSale.timestamp);
-      let formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Usar hora manual si existe
-      if (lastSale.manualTime) {
-        formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${lastSale.manualTime}`;
-      }
+      const formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
       
       let itemsHtml = lastSale.items.map(item => 
         `<li>${item.quantity} ${item.category}</li>`
@@ -1525,6 +1420,8 @@
           
           storeData.sales.splice(index, 1);
           saveLocalStorageData();
+          
+          // Actualizar UI
           loadSales();
           loadLastSale();
           editSaleModal.classList.remove('show');
@@ -1533,7 +1430,7 @@
       }
     }
     
-    async function loadSales() {
+    function loadSales() {
       const startDate = new Date(startDateInput.value);
       const endDate = new Date(endDateInput.value);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
@@ -1542,24 +1439,6 @@
       
       salesList.innerHTML = '';
       
-      // Si es admin, intentar cargar de Firebase primero
-      if (isMasterUser) {
-        try {
-          const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
-          if (firebaseSales.length > 0) {
-            displaySales(firebaseSales, store);
-            return;
-          }
-        } catch (error) {
-          console.error("Error al cargar de Firebase, mostrando localStorage:", error);
-        }
-      }
-      
-      // Cargar de localStorage si no es admin o si falló Firebase
-      loadSalesFromLocalStorage(store, startDate, endDate);
-    }
-    
-    function loadSalesFromLocalStorage(store, startDate, endDate) {
       // Recorrer todas las tiendas
       for (const [storeName, storeData] of Object.entries(salesData)) {
         // Filtrar por tienda si es necesario
@@ -1582,12 +1461,7 @@
         // Agregar ventas
         filteredSales.forEach(sale => {
           const dateObj = new Date(sale.timestamp);
-          let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-          
-          // Usar hora manual si existe
-          if (sale.manualTime) {
-            formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-          }
+          const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
           
           let itemsHtml = sale.items.map(item => 
             `<li>${item.quantity} ${item.category}</li>`
@@ -1672,91 +1546,7 @@
       });
     }
     
-    function displaySales(sales, store) {
-      if (sales.length === 0) {
-        salesList.innerHTML = `
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-receipt text-3xl mb-2"></i>
-            <p>No hay ventas en el rango seleccionado</p>
-          </div>
-        `;
-        return;
-      }
-      
-      // Agrupar por tienda si es admin y se seleccionó "todas"
-      if (isMasterUser && store === 'all') {
-        const salesByStore = {};
-        
-        sales.forEach(sale => {
-          if (!salesByStore[sale.store]) {
-            salesByStore[sale.store] = [];
-          }
-          salesByStore[sale.store].push(sale);
-        });
-        
-        for (const [store, storeSales] of Object.entries(salesByStore)) {
-          const storeHeader = document.createElement('div');
-          storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-          storeHeader.textContent = `Tienda: ${store}`;
-          salesList.appendChild(storeHeader);
-          
-          storeSales.forEach(sale => createSaleElement(sale));
-        }
-      } else {
-        // Mostrar sin agrupar si se seleccionó una tienda específica
-        const storeHeader = document.createElement('div');
-        storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-        storeHeader.textContent = `Tienda: ${store}`;
-        salesList.appendChild(storeHeader);
-        
-        sales.forEach(sale => createSaleElement(sale));
-      }
-    }
-    
-    function createSaleElement(sale) {
-      const dateObj = new Date(sale.timestamp);
-      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Usar hora manual si existe
-      if (sale.manualTime) {
-        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-      }
-      
-      let itemsHtml = sale.items.map(item => 
-        `<li>${item.quantity} ${item.category}</li>`
-      ).join('');
-      
-      const saleElement = document.createElement('div');
-      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-      saleElement.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="font-semibold">${formattedDate}</div>
-            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-            ${isMasterUser ? `<div class="text-sm text-gray-600">Tienda: ${sale.store}</div>` : ''}
-          </div>
-          <div class="flex gap-2">
-            <button class="edit-sale-btn bg-yellow-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="delete-sale-btn bg-red-500 text-white px-3 py-1 rounded-lg" data-id="${sale.id}">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div class="mt-2">
-          <div class="font-semibold">Método de pago: ${sale.payment}</div>
-          <div class="font-semibold mt-1">Artículos:</div>
-          <ul class="list-disc pl-5">
-            ${itemsHtml}
-          </ul>
-        </div>
-      `;
-      
-      salesList.appendChild(saleElement);
-    }
-    
-    async function loadAdminSales() {
+    function loadAdminSales() {
       const startDate = new Date(adminStartDate.value);
       const endDate = new Date(adminEndDate.value);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
@@ -1765,95 +1555,55 @@
       
       adminSalesList.innerHTML = '';
       
-      try {
-        // Obtener ventas de Firebase
-        const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
+      // Recorrer todas las tiendas
+      for (const [storeName, storeData] of Object.entries(salesData)) {
+        // Filtrar por tienda si es necesario
+        if (store !== 'all' && store !== storeName) continue;
         
-        if (firebaseSales.length === 0) {
-          adminSalesList.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-              <i class="fas fa-receipt text-3xl mb-2"></i>
-              <p>No hay ventas en el rango seleccionado</p>
-            </div>
-          `;
-          return;
-        }
-        
-        // Mostrar ventas agrupadas por tienda
-        const salesByStore = {};
-        firebaseSales.forEach(sale => {
-          if (!salesByStore[sale.store]) {
-            salesByStore[sale.store] = [];
-          }
-          salesByStore[sale.store].push(sale);
+        // Filtrar ventas por fecha
+        const filteredSales = storeData.sales.filter(sale => {
+          const saleDate = new Date(sale.timestamp);
+          return saleDate >= startDate && saleDate < endDate;
         });
         
-        // Mostrar todas las tiendas si se seleccionó "todas"
-        if (store === 'all') {
-          for (const [storeName, storeSales] of Object.entries(salesByStore)) {
-            // Encabezado de tienda
-            const storeHeader = document.createElement('div');
-            storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-            storeHeader.textContent = `Tienda: ${storeName}`;
-            adminSalesList.appendChild(storeHeader);
-            
-            storeSales.forEach(sale => createAdminSaleElement(sale));
-          }
-        } else {
-          // Mostrar solo la tienda seleccionada
-          if (salesByStore[store] && salesByStore[store].length > 0) {
-            // Encabezado de tienda
-            const storeHeader = document.createElement('div');
-            storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-            storeHeader.textContent = `Tienda: ${store}`;
-            adminSalesList.appendChild(storeHeader);
-            
-            salesByStore[store].forEach(sale => createAdminSaleElement(sale));
-          }
-        }
-      } catch (error) {
-        console.error("Error al obtener ventas:", error);
-        adminSalesList.innerHTML = `
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
-            <p>Error al cargar ventas</p>
-          </div>
-        `;
+        if (filteredSales.length === 0) continue;
+        
+        // Crear encabezado de tienda
+        const storeHeader = document.createElement('div');
+        storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+        storeHeader.textContent = `Tienda: ${storeName}`;
+        adminSalesList.appendChild(storeHeader);
+        
+        // Agregar ventas
+        filteredSales.forEach(sale => {
+          const dateObj = new Date(sale.timestamp);
+          const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+          
+          let itemsHtml = sale.items.map(item => 
+            `<li>${item.quantity} ${item.category}</li>`
+          ).join('');
+          
+          const saleElement = document.createElement('div');
+          saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+          saleElement.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-semibold">${formattedDate}</div>
+                <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+              </div>
+            </div>
+            <div class="mt-2">
+              <div class="font-semibold">Método de pago: ${sale.payment}</div>
+              <div class="font-semibold mt-1">Artículos:</div>
+              <ul class="list-disc pl-5">
+                ${itemsHtml}
+              </ul>
+            </div>
+          `;
+          
+          adminSalesList.appendChild(saleElement);
+        });
       }
-    }
-    
-    function createAdminSaleElement(sale) {
-      const dateObj = new Date(sale.timestamp);
-      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Usar hora manual si existe
-      if (sale.manualTime) {
-        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
-      }
-      
-      let itemsHtml = sale.items.map(item => 
-        `<li>${item.quantity} ${item.category}</li>`
-      ).join('');
-      
-      const saleElement = document.createElement('div');
-      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-      saleElement.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="font-semibold">${formattedDate}</div>
-            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
-            <div class="text-sm text-gray-600">Tienda: ${sale.store}</div>
-          </div>
-        </div>
-        <div class="mt-2">
-          <div class="font-semibold">Método de pago: ${sale.payment}</div>
-          <div class="font-semibold mt-1">Artículos:</div>
-          <ul class="list-disc pl-5">
-            ${itemsHtml}
-          </ul>
-        </div>
-      `;
-      adminSalesList.appendChild(saleElement);
     }
     
     function loadOnlineUsers() {
@@ -1908,8 +1658,7 @@
       });
     }
     
-    // Función para generar el libro de Excel para una tienda
-    function generateWorkbookForStore(storeName, storeData) {
+    function exportStoreToExcel(storeName, storeData) {
       // Definir categorías para las columnas
       const categories = [
         'Articulos', 'Articulos (P)', 'Bisuteria', 'Bisuteria (P)', 
@@ -1919,7 +1668,7 @@
       // Crear array de datos para la hoja
       const excelData = [];
       
-      // Encabezados
+      // Encabezados modificados: Fecha, Hora, Ubicación (en lugar de ID), Método de Pago, ...categorías
       const headers = ['Fecha', 'Hora', 'Ubicación', 'Método de Pago', ...categories];
       excelData.push(headers);
       
@@ -1929,7 +1678,7 @@
         const date = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
         const time = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
         
-        // Filas
+        // Filas modificadas: en lugar de sale.id, ponemos la ubicación de la tienda
         const row = [date, time, storeName, sale.payment];
         
         // Inicializar contadores de categorías
@@ -1955,49 +1704,11 @@
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(excelData);
       XLSX.utils.book_append_sheet(wb, ws, storeName);
-      return wb;
-    }
-    
-    // Función para exportar una tienda individual
-    function exportStoreToExcel(storeName, storeData) {
-      if (!storeData || storeData.sales.length === 0) {
-        showToast('No hay ventas para exportar', 'error');
-        return;
-      }
       
-      const wb = generateWorkbookForStore(storeName, storeData);
+      // Generar archivo y descargar
       XLSX.writeFile(wb, `${storeName}_ventas.xlsx`);
-      showToast('Exportación completada', 'success');
     }
     
-    // Función para exportar todas las tiendas en un ZIP
-    async function exportAllStoresToExcel() {
-      const zip = new JSZip();
-      let hasData = false;
-      
-      // Recorrer todas las tiendas
-      for (const [storeName, storeData] of Object.entries(salesData)) {
-        if (storeData.sales.length > 0) {
-          hasData = true;
-          const wb = generateWorkbookForStore(storeName, storeData);
-          const excelBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
-          zip.file(`${storeName}_ventas.xlsx`, excelBlob);
-        }
-      }
-      
-      if (!hasData) {
-        showToast('No hay ventas para exportar', 'error');
-        return;
-      }
-      
-      // Generar y descargar el archivo ZIP
-      zip.generateAsync({type: "blob"}).then(content => {
-        saveAs(content, "todas_las_tiendas_ventas.zip");
-        showToast('Todas las tiendas exportadas en un archivo ZIP', 'success');
-      });
-    }
-    
-    // Función para exportar la tienda actual
     function exportToExcel() {
       const storeData = salesData[currentStore];
       if (!storeData || storeData.sales.length === 0) {
@@ -2006,8 +1717,26 @@
       }
       
       exportStoreToExcel(currentStore, storeData);
+      showToast('Exportación completada', 'success');
     }
     
+    function exportAllStoresToExcel() {
+      let hasData = false;
+      
+      for (const [storeName, storeData] of Object.entries(salesData)) {
+        if (storeData.sales.length > 0) {
+          exportStoreToExcel(storeName, storeData);
+          hasData = true;
+        }
+      }
+      
+      if (hasData) {
+        showToast('Todas las tiendas exportadas', 'success');
+      } else {
+        showToast('No hay ventas para exportar', 'error');
+      }
+    }
+
     // Inicializar
     document.addEventListener('DOMContentLoaded', () => {
       // Cargar sesiones activas
@@ -2109,9 +1838,6 @@
         loadSales();
       });
       
-      // Sincronizar con Firebase
-      syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
-      
       // Panel de administración
       adminPanelBtn.addEventListener('click', () => {
         adminModal.classList.add('show');
@@ -2133,7 +1859,7 @@
         loadAdminSales();
       });
       
-      // Exportar todas las ventas (nueva funcionalidad)
+      // Exportar todas las ventas
       adminExportAll.addEventListener('click', exportAllStoresToExcel);
       
       // Cerrar modal de edición
@@ -2144,9 +1870,7 @@
       // Cambiar cantidad
       decreaseQtyBtn.addEventListener('click', () => {
         const current = parseInt(quantityInput.value) || 1;
-        if (current > 1) {
-          quantityInput.value = current - 1;
-        }
+        if (current > 1) quantityInput.value = current - 1;
       });
       
       increaseQtyBtn.addEventListener('click', () => {
