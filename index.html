@@ -943,16 +943,35 @@
     }
 
     // Funciones Firebase
-    async function backupSaleToFirebase(sale) {
+    async function saveSaleToFirebase(sale) {
       try {
-        await db.collection('ventas').add({
+        // Primero guardar en Firebase
+        const docRef = await db.collection('ventas').add({
           ...sale,
           backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        console.log("Venta respaldada en Firebase");
+        
+        // Guardar el ID de Firebase en el objeto de venta
+        sale.firebaseId = docRef.id;
+        
+        // Luego guardar en localStorage como caché
+        initializeStoreData(currentStore);
+        salesData[currentStore].sales.push(sale);
+        saveLocalStorageData();
+        
+        console.log("Venta guardada en Firebase y caché local");
+        return true;
       } catch (error) {
-        console.error("Error al respaldar venta:", error);
-        showToast('Error al respaldar venta', 'error');
+        console.error("Error al guardar venta en Firebase:", error);
+        
+        // Si falla Firebase, guardar solo en localStorage con flag de pendiente
+        sale.pendingSync = true;
+        initializeStoreData(currentStore);
+        salesData[currentStore].sales.push(sale);
+        saveLocalStorageData();
+        
+        showToast('Venta guardada localmente (sin conexión)', 'warning');
+        return false;
       }
     }
 
@@ -970,26 +989,51 @@
         const snapshot = await query.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error("Error al obtener ventas:", error);
-        showToast('Error al cargar ventas', 'error');
-        return [];
+        console.error("Error al obtener ventas de Firebase:", error);
+        throw error; // Propagamos el error para manejarlo en el llamador
       }
     }
 
-    async function syncAllSalesToFirebase() {
+    async function syncPendingSales() {
       if (!isMasterUser) return;
       
       try {
-        let total = 0;
+        let totalSynced = 0;
+        let totalFailed = 0;
         
+        // Recorrer todas las tiendas
         for (const [store, storeData] of Object.entries(salesData)) {
-          for (const sale of storeData.sales) {
-            await backupSaleToFirebase(sale);
-            total++;
+          // Filtrar ventas pendientes de sincronización
+          const pendingSales = storeData.sales.filter(sale => sale.pendingSync && !sale.firebaseId);
+          
+          for (const sale of pendingSales) {
+            try {
+              // Intentar guardar en Firebase
+              const docRef = await db.collection('ventas').add({
+                ...sale,
+                backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+              });
+              
+              // Actualizar el objeto de venta
+              sale.firebaseId = docRef.id;
+              delete sale.pendingSync;
+              totalSynced++;
+            } catch (error) {
+              console.error(`Error sincronizando venta ${sale.id}:`, error);
+              totalFailed++;
+            }
           }
         }
         
-        showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
+        // Guardar cambios en localStorage
+        saveLocalStorageData();
+        
+        if (totalSynced > 0 || totalFailed > 0) {
+          showToast(`Sincronizadas ${totalSynced} ventas. Fallaron ${totalFailed}`, 
+                   totalFailed > 0 ? 'warning' : 'success');
+        } else {
+          showToast('No hay ventas pendientes de sincronizar', 'info');
+        }
       } catch (error) {
         showToast('Error al sincronizar ventas', 'error');
         console.error("Error:", error);
@@ -1279,16 +1323,15 @@
       };
       
       try {
-        // Guardar venta en localStorage
-        initializeStoreData(currentStore);
-        salesData[currentStore].sales.push(sale);
-        saveLocalStorageData();
+        // Guardar venta en Firebase y localStorage
+        const success = await saveSaleToFirebase(sale);
+        
+        if (success) {
+          showToast('Venta guardada exitosamente!', 'success');
+        }
         
         // Actualizar estadísticas
         updateStoreStats(currentStore, saleItems, sale.payment);
-        
-        // Respaldar en Firebase
-        await backupSaleToFirebase(sale);
         
         // Resetear formulario
         saleItems = [];
@@ -1299,8 +1342,6 @@
         // Actualizar UI
         updateSaleItemsDisplay();
         loadLastSale();
-        
-        showToast('Venta guardada exitosamente!', 'success');
       } catch (error) {
         showToast('Error al guardar la venta', 'error');
         console.error('Error:', error);
@@ -1423,7 +1464,7 @@
       editSaleModal.classList.add('show');
     }
     
-    function saveEditedSale() {
+    async function saveEditedSale() {
       const saleId = parseInt(editSaleId.value);
       const store = editSaleStore.value;
       if (!saleId || !store) return;
@@ -1480,7 +1521,23 @@
         }
       }
       
-      // Guardar cambios
+      // Actualizar en Firebase si existe
+      if (saleToEdit.firebaseId) {
+        try {
+          await db.collection('ventas').doc(saleToEdit.firebaseId).update({
+            items: saleToEdit.items,
+            payment: saleToEdit.payment,
+            manualTime: saleToEdit.manualTime
+          });
+        } catch (error) {
+          console.error("Error al actualizar venta en Firebase:", error);
+          saleToEdit.pendingSync = true;
+        }
+      } else {
+        saleToEdit.pendingSync = true;
+      }
+      
+      // Guardar cambios en localStorage
       saveLocalStorageData();
       
       // Actualizar UI
@@ -1493,7 +1550,7 @@
       showToast('Venta actualizada exitosamente', 'success');
     }
     
-    function deleteSale() {
+    async function deleteSale() {
       const saleId = parseInt(editSaleId.value);
       const store = editSaleStore.value;
       if (!saleId || !store) return;
@@ -1523,6 +1580,21 @@
             }
           }
           
+          // Eliminar de Firebase si existe
+          if (saleToDelete.firebaseId) {
+            try {
+              await db.collection('ventas').doc(saleToDelete.firebaseId).delete();
+            } catch (error) {
+              console.error("Error al eliminar venta de Firebase:", error);
+              // Si falla, marcamos para sincronización posterior
+              saleToDelete.pendingSync = true;
+              saveLocalStorageData();
+              showToast('Venta eliminada localmente (error en Firebase)', 'warning');
+              editSaleModal.classList.remove('show');
+              return;
+            }
+          }
+          
           storeData.sales.splice(index, 1);
           saveLocalStorageData();
           loadSales();
@@ -1542,21 +1614,15 @@
       
       salesList.innerHTML = '';
       
-      // Si es admin, intentar cargar de Firebase primero
-      if (isMasterUser) {
-        try {
-          const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
-          if (firebaseSales.length > 0) {
-            displaySales(firebaseSales, store);
-            return;
-          }
-        } catch (error) {
-          console.error("Error al cargar de Firebase, mostrando localStorage:", error);
-        }
+      try {
+        // Primero intentar cargar de Firebase
+        const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
+        displaySales(firebaseSales, store);
+      } catch (error) {
+        console.error("Error al cargar de Firebase, mostrando localStorage:", error);
+        // Si falla Firebase, cargar de localStorage
+        loadSalesFromLocalStorage(store, startDate, endDate);
       }
-      
-      // Cargar de localStorage si no es admin o si falló Firebase
-      loadSalesFromLocalStorage(store, startDate, endDate);
     }
     
     function loadSalesFromLocalStorage(store, startDate, endDate) {
@@ -1657,6 +1723,16 @@
                       delete stats.paymentMethods[saleToDelete.payment];
                     }
                   }
+                }
+                
+                // Eliminar de Firebase si existe
+                if (saleToDelete.firebaseId) {
+                  db.collection('ventas').doc(saleToDelete.firebaseId).delete()
+                    .catch(error => {
+                      console.error("Error al eliminar venta de Firebase:", error);
+                      saleToDelete.pendingSync = true;
+                      saveLocalStorageData();
+                    });
                 }
                 
                 data.sales.splice(index, 1);
@@ -2110,7 +2186,7 @@
       });
       
       // Sincronizar con Firebase
-      syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
+      syncFirebaseBtn.addEventListener('click', syncPendingSales);
       
       // Panel de administración
       adminPanelBtn.addEventListener('click', () => {
