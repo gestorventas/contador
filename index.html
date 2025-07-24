@@ -969,22 +969,21 @@
       }
     }
 
-    async function getSalesFromFirebase(store = 'all', startDate, endDate) {
+    // OBTENER VENTAS CON FILTRADO DE FECHAS
+    async function getSalesFromFirebase(store, startDate, endDate) {
       try {
         let query = db.collection('ventas')
           .where('timestamp', '>=', startDate.toISOString())
-          .where('timestamp', '<=', endDate.toISOString())
-          .orderBy('timestamp', 'desc');
-
+          .where('timestamp', '<=', endDate.toISOString());
+        
         if (store !== 'all') {
           query = query.where('store', '==', store);
         }
-
+        
         const snapshot = await query.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
         console.error("Error al obtener ventas:", error);
-        showToast('Error al cargar ventas', 'error');
         return [];
       }
     }
@@ -1922,41 +1921,32 @@
     }
     
     // Función para generar el libro de Excel para una tienda
+    // GENERAR EXCEL PARA UNA TIENDA
     function generateWorkbookForStore(storeName, sales) {
-      // Definir categorías para las columnas
       const categories = [
         'Articulos', 'Articulos (P)', 'Bisuteria', 'Bisuteria (P)', 
         'Zapato', 'Zapato (P)', 'Prenda', 'Prenda (P)', 'B.Eco'
       ];
       
-      // Crear array de datos para la hoja
       const excelData = [];
-      
-      // Encabezados
-      const headers = ['Fecha', 'Hora', 'Ubicación', 'Método de Pago', ...categories];
+      const headers = ['Fecha', 'Hora', 'Usuario', 'Método de Pago', ...categories];
       excelData.push(headers);
       
-      // Llenar filas
       sales.forEach(sale => {
         const dateObj = new Date(sale.timestamp);
         const date = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
-        const time = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+        const time = sale.manualTime || `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
         
-        // Filas
-        const row = [date, time, sale.store, sale.payment];
-        
-        // Inicializar contadores de categorías
+        const row = [date, time, users[sale.user]?.displayName || sale.user, sale.payment];
         const categoryCounts = {};
-        categories.forEach(cat => categoryCounts[cat] = 0);
         
-        // Contar artículos por categoría
+        categories.forEach(cat => categoryCounts[cat] = 0);
         sale.items.forEach(item => {
           if (categoryCounts.hasOwnProperty(item.category)) {
             categoryCounts[item.category] += item.quantity;
           }
         });
         
-        // Agregar contadores a la fila
         categories.forEach(cat => {
           row.push(categoryCounts[cat]);
         });
@@ -1964,7 +1954,6 @@
         excelData.push(row);
       });
       
-      // Crear libro de Excel
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(excelData);
       XLSX.utils.book_append_sheet(wb, ws, storeName);
@@ -1984,58 +1973,23 @@
     }
     
     // Función para exportar todas las tiendas desde Firebase
-    async function exportAllStoresFromFirebase() {
-      const startDate = new Date(adminStartDate.value);
-      const endDate = new Date(adminEndDate.value);
-      endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
+    async function exportAllStores() {
+      const stores = [
+        '506', 'centro', 'pavas', 'terramall', 
+        'escazu', 'hot', 'desamparados', 'canonazo', 'sabanilla'
+      ];
       
-      // Lista de tiendas
-      const stores = ['506', 'centro', 'pavas', 'terramall', 'escazu', 'hot', 'desamparados', 'canonazo', 'sabanilla'];
-      
-      // Mostrar estado de exportación
       exportStatus.classList.remove('hidden');
-      exportMessage.textContent = "Exportando tiendas...";
       
       try {
-        // Contador para saber cuántas tiendas se exportaron
-        let exportedCount = 0;
-        
         for (const store of stores) {
-          try {
-            exportMessage.textContent = `Obteniendo datos de ${store}...`;
-            
-            // Obtener ventas de Firebase para esta tienda
-            const sales = await getSalesFromFirebase(store, startDate, endDate);
-            
-            if (sales.length === 0) {
-              console.log(`No hay ventas para ${store} en el rango seleccionado.`);
-              continue;
-            }
-            
-            exportMessage.textContent = `Generando Excel para ${store}...`;
-            
-            // Generar y descargar el libro
-            const wb = generateWorkbookForStore(store, sales);
-            XLSX.writeFile(wb, `${store}_ventas.xlsx`);
-            
-            exportedCount++;
-            
-            // Pequeña pausa entre descargas
-            await new Promise(resolve => setTimeout(resolve, 500));
-          } catch (error) {
-            console.error(`Error exportando ${store}:`, error);
-            showToast(`Error al exportar ${store}: ${error.message}`, 'error');
-          }
+          exportMessage.textContent = `Exportando ${store}...`;
+          await exportStoreToExcel(store);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar entre descargas
         }
-        
-        if (exportedCount > 0) {
-          showToast(`Exportación de ${exportedCount} tiendas completada`, 'success');
-        } else {
-          showToast('No se encontraron ventas para exportar', 'warning');
-        }
+        showToast('Exportación completa de todas las tiendas', 'success');
       } catch (error) {
-        console.error("Error general en exportación:", error);
-        showToast('Error al exportar todas las tiendas', 'error');
+        showToast('Error en exportación completa: ' + error.message, 'error');
       } finally {
         exportStatus.classList.add('hidden');
       }
@@ -2049,9 +2003,17 @@
         return;
       }
       
-      const wb = generateWorkbookForStore(currentStore, storeData.sales);
-      XLSX.writeFile(wb, `${currentStore}_ventas.xlsx`);
-      showToast('Exportación completada', 'success');
+      // Generar Excel
+        const wb = generateWorkbookForStore(store, sales);
+        XLSX.writeFile(wb, `${store}_ventas.xlsx`);
+        
+        showToast(`Exportación de ${store} completada`, 'success');
+      } catch (error) {
+        showToast(`Error exportando ${store}: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        exportStatus.classList.add('hidden');
+      }
     }
     
     // Inicializar
@@ -2180,7 +2142,7 @@
       });
       
       // Exportar todas las ventas desde Firebase
-      adminExportAll.addEventListener('click', exportAllStoresFromFirebase);
+      adminExportAll.addEventListener('click', exportAllStores);
       
       // Cerrar modal de edición
       closeEditModal.addEventListener('click', () => {
