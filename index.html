@@ -239,9 +239,40 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      color: white;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-spinner"></div>
+    <p id="loading-message">Cargando datos...</p>
+  </div>
+  
   <!-- Toast Notifications -->
   <div id="toast">
     <i class="fas fa-info-circle mr-2"></i>
@@ -305,7 +336,7 @@
     </form>
     
     <div class="mt-8 text-center text-sm text-gray-600">
-      <p>Sistema de gestión de ventas v3.0</p>
+      <p>Sistema de gestión de ventas v3.1</p>
       <p class="mt-1">© 2023 Tiendas de Accesorios - Todos los derechos reservados</p>
     </div>
   </div>
@@ -448,7 +479,7 @@
     
     <!-- Footer -->
     <footer class="mt-8 py-6 text-center text-gray-600 text-sm">
-      <p>Sistema de Gestión de Ventas v3.0</p>
+      <p>Sistema de Gestión de Ventas v3.1</p>
       <p class="mt-1">© 2023 Tiendas de Accesorios. Todos los derechos reservados.</p>
     </footer>
   </div>
@@ -922,6 +953,8 @@
     const analyticsMainPaymentPercent = document.getElementById('analytics-main-payment-percent');
     const analyticsPaymentProgress = document.getElementById('analytics-payment-progress');
     const paymentMethodsDetails = document.getElementById('payment-methods-details');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingMessage = document.getElementById('loading-message');
 
     // Variables de estado
     let currentUserData = null;
@@ -954,6 +987,16 @@
       
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
+    
+    // Mostrar/ocultar loading
+    function showLoading(message = 'Cargando...') {
+      loadingMessage.textContent = message;
+      loadingOverlay.classList.remove('hidden');
+    }
+    
+    function hideLoading() {
+      loadingOverlay.classList.add('hidden');
+    }
 
     // Funciones Firebase
     async function backupSaleToFirebase(sale) {
@@ -971,9 +1014,14 @@
 
     async function getSalesFromFirebase(store = 'all', startDate, endDate) {
       try {
+        // Ajustar fechas para incluir todo el día
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        
         let query = db.collection('ventas')
-          .where('timestamp', '>=', startDate.toISOString())
-          .where('timestamp', '<=', endDate.toISOString());
+          .where('timestamp', '>=', start)
+          .where('timestamp', '<=', end);
         
         if (store !== 'all') {
           query = query.where('store', '==', store);
@@ -983,6 +1031,7 @@
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
         console.error("Error al obtener ventas:", error);
+        showToast('Error al cargar ventas', 'error');
         return [];
       }
     }
@@ -991,6 +1040,7 @@
       if (!isMasterUser) return;
       
       try {
+        showLoading('Sincronizando ventas con Firebase...');
         let total = 0;
         
         for (const [store, storeData] of Object.entries(salesData)) {
@@ -1004,6 +1054,8 @@
       } catch (error) {
         showToast('Error al sincronizar ventas', 'error');
         console.error("Error:", error);
+      } finally {
+        hideLoading();
       }
     }
 
@@ -1775,6 +1827,7 @@
       const store = adminStoreFilter.value;
       
       adminSalesList.innerHTML = '';
+      showLoading('Cargando ventas de Firebase...');
       
       try {
         // Obtener ventas de Firebase
@@ -1787,6 +1840,7 @@
               <p>No hay ventas en el rango seleccionado</p>
             </div>
           `;
+          hideLoading();
           return;
         }
         
@@ -1830,6 +1884,8 @@
             <p>Error al cargar ventas</p>
           </div>
         `;
+      } finally {
+        hideLoading();
       }
     }
     
@@ -1937,15 +1993,14 @@
       // Llenar filas
       sales.forEach(sale => {
         const dateObj = new Date(sale.timestamp);
-        const date = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
-        let time = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+        const date = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth()+1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+        let time = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
         
         // Usar hora manual si existe
         if (sale.manualTime) {
           time = sale.manualTime;
         }
         
-        // Filas
         const row = [date, time, sale.store, sale.payment];
         
         // Inicializar contadores de categorías
@@ -1977,15 +2032,19 @@
     // Función para exportar una tienda individual
     async function exportStoreToExcel(storeName) {
       // Obtener fechas del panel de administración
-      const startDate = new Date(document.getElementById('admin-start-date').value + 'T00:00:00Z');
-      const endDate = new Date(document.getElementById('admin-end-date').value + 'T23:59:59Z');
+      const startDate = new Date(adminStartDate.value);
+      const endDate = new Date(adminEndDate.value);
+      endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
       
       try {
+        showLoading(`Exportando ${storeName}...`);
+        
         // Obtener ventas de Firebase
         const sales = await getSalesFromFirebase(storeName, startDate, endDate);
         
         if (!sales || sales.length === 0) {
           showToast(`No hay ventas para exportar en ${storeName}`, 'error');
+          hideLoading();
           return;
         }
         
@@ -1995,6 +2054,9 @@
         showToast(`Exportación de ${storeName} completada`, 'success');
       } catch (error) {
         showToast(`Error al exportar ${storeName}: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        hideLoading();
       }
     }
     
@@ -2006,21 +2068,42 @@
       ];
       
       // Mostrar estado de exportación
-      exportStatus.classList.remove('hidden');
+      showLoading('Exportando todas las tiendas...');
       
       try {
         for (const store of stores) {
-          exportMessage.textContent = `Exportando ${store}...`;
-          await exportStoreToExcel(store);
-          
-          // Pequeña pausa entre descargas
-          await new Promise(resolve => setTimeout(resolve, 500));
+          try {
+            // Obtener fechas del panel de administración
+            const startDate = new Date(adminStartDate.value);
+            const endDate = new Date(adminEndDate.value);
+            endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
+            
+            // Obtener ventas de Firebase para esta tienda
+            const sales = await getSalesFromFirebase(store, startDate, endDate);
+            
+            if (sales.length === 0) {
+              console.log(`No hay ventas para ${store} en el rango seleccionado.`);
+              continue;
+            }
+            
+            // Generar y descargar el libro
+            const wb = generateWorkbookForStore(store, sales);
+            XLSX.writeFile(wb, `${store}_ventas.xlsx`);
+            
+            // Pequeña pausa entre descargas
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (error) {
+            console.error(`Error exportando ${store}:`, error);
+            showToast(`Error al exportar ${store}: ${error.message}`, 'error');
+          }
         }
+        
         showToast('Exportación completa de todas las tiendas', 'success');
       } catch (error) {
-        showToast('Error en exportación completa: ' + error.message, 'error');
+        console.error("Error general en exportación:", error);
+        showToast('Error al exportar todas las tiendas', 'error');
       } finally {
-        exportStatus.classList.add('hidden');
+        hideLoading();
       }
     }
     
