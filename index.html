@@ -8,45 +8,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js"></script>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
 
-  <script>
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyDjlI3qysLRd41TW3QTImB2XvdrhZ6PV8g",
-      authDomain: "contador-214a3.firebaseapp.com",
-      projectId: "contador-214a3",
-      storageBucket: "contador-214a3.appspot.com",
-      messagingSenderId: "909890810354",
-      appId: "1:909890810354:web:007e7efd4281b25356bb6b"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#3b82f6',
-            secondary: '#10b981',
-            accent: '#8b5cf6',
-            danger: '#ef4444',
-            warning: '#f59e0b',
-            dark: '#1f2937',
-          }
-        }
-      }
-    }
-  </script>
   <style>
-    /* Estilos existentes... */
+    /* Estilos CSS anteriores se mantienen igual */
     body {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -270,11 +237,8 @@
       <h2 class="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h2>
 
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">Usuario</label>
         <label class="block text-sm font-medium text-gray-700">Usuario (Correo)</label>
         <div class="relative">
-          <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="username" placeholder="Ingrese su usuario" required 
           <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
           <input type="email" id="username" placeholder="Ingrese su correo" required 
                  class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -382,13 +346,11 @@
         <div>
           <label class="block font-semibold text-gray-700 mb-2">Cantidad</label>
           <div class="flex">
-            <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg">
             <button id="decrease-qty" class="bg-gray-200 px-4 py-2 rounded-l-lg hover:bg-gray-300">
               <i class="fas fa-minus"></i>
             </button>
             <input type="number" id="item-quantity" min="1" value="1" 
                    class="w-full p-2 border-y border-gray-300 text-center focus:outline-none">
-            <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg">
             <button id="increase-qty" class="bg-gray-200 px-4 py-2 rounded-r-lg hover:bg-gray-300">
               <i class="fas fa-plus"></i>
             </button>
@@ -576,7 +538,6 @@
           <label class="font-semibold whitespace-nowrap">Hasta:</label>
           <input type="date" id="end-date" class="p-2 border border-gray-300 rounded-lg w-full" />
         </div>
-        <!-- Filtro de tienda oculto para usuarios no administradores -->
         <div class="flex gap-2 items-center" id="store-filter-container">
           <label class="font-semibold whitespace-nowrap">Tienda:</label>
           <select id="store-filter" class="p-2 border border-gray-300 rounded-lg w-full">
@@ -759,24 +720,6 @@
 
     // Variables y DOM
     const users = { 
-      // Credenciales por tienda (máximo 2 usuarios por tienda + admin)
-      admin: { password: 'admin123', stores: ['all'] },
-      centro1: { password: 'centro123', stores: ['centro'] },
-      centro2: { password: 'centro456', stores: ['centro'] },
-      pavas1: { password: 'pavas123', stores: ['pavas'] },
-      pavas2: { password: 'pavas456', stores: ['pavas'] },
-      terramall1: { password: 'terramall123', stores: ['terramall'] },
-      terramall2: { password: 'terramall456', stores: ['terramall'] },
-      escazu1: { password: 'escazu123', stores: ['escazu'] },
-      escazu2: { password: 'escazu456', stores: ['escazu'] },
-      hot1: { password: 'hot123', stores: ['hot'] },
-      hot2: { password: 'hot456', stores: ['hot'] },
-      desamparados1: { password: 'desamparados123', stores: ['desamparados'] },
-      desamparados2: { password: 'desamparados456', stores: ['desamparados'] },
-      canonazo1: { password: 'canonazo123', stores: ['canonazo'] },
-      canonazo2: { password: 'canonazo456', stores: ['canonazo'] },
-      sabanilla1: { password: 'sabanilla123', stores: ['sabanilla'] },
-      sabanilla2: { password: 'sabanilla456', stores: ['sabanilla'] }
       'admin@accesorios.com': { 
         password: 'AdminSecure123!', 
         stores: ['all'],
@@ -874,14 +817,6 @@
       }
     };
 
-    const loginForm      = document.getElementById('login-form');
-    const usernameInput  = document.getElementById('username');
-    const passwordInput  = document.getElementById('password');
-    const storeSelect    = document.getElementById('selected-store');
-    const errorMessage   = document.getElementById('error-message');
-    const loginScreen    = document.getElementById('login-screen');
-    const mainContent    = document.getElementById('main-content');
-    const logoutBtn      = document.getElementById('logout-btn');
     // Referencias a elementos DOM
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
@@ -892,37 +827,22 @@
     const mainContent = document.getElementById('main-content');
     const logoutBtn = document.getElementById('logout-btn');
     const categorySelect = document.getElementById('selected-category');
-    const quantityInput  = document.getElementById('item-quantity');
     const quantityInput = document.getElementById('item-quantity');
     const addCategoryBtn = document.getElementById('add-category');
-    const paymentSelect  = document.getElementById('selected-payment');
-    const manualTimeInput= document.getElementById('manual-time');
-    const saveSaleBtn    = document.getElementById('save-sale');
     const paymentSelect = document.getElementById('selected-payment');
     const manualTimeInput = document.getElementById('manual-time');
     const saveSaleBtn = document.getElementById('save-sale');
     const exportExcelBtn = document.getElementById('export-excel');
-    const clearAllBtn    = document.getElementById('clear-all');
-    const viewSalesBtn   = document.getElementById('view-sales');
-    const salesModal     = document.getElementById('sales-modal');
-    const salesList      = document.getElementById('sales-list');
     const clearAllBtn = document.getElementById('clear-all');
     const viewSalesBtn = document.getElementById('view-sales');
     const salesModal = document.getElementById('sales-modal');
     const salesList = document.getElementById('sales-list');
     const startDateInput = document.getElementById('start-date');
-    const endDateInput   = document.getElementById('end-date');
-    const storeFilter    = document.getElementById('store-filter');
     const endDateInput = document.getElementById('end-date');
     const storeFilter = document.getElementById('store-filter');
     const storeFilterContainer = document.getElementById('store-filter-container');
     const applyFilterBtn = document.getElementById('apply-filter');
     const clearFilterBtn = document.getElementById('clear-filter');
-    const toast          = document.getElementById('toast');
-    const toastMessage   = document.getElementById('toast-message');
-    const adminPanelBtn  = document.getElementById('admin-panel-btn');
-    const adminModal     = document.getElementById('admin-modal');
-    const usersOnlineList= document.getElementById('users-online-list');
     const syncFirebaseBtn = document.getElementById('sync-firebase-btn');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
@@ -931,20 +851,16 @@
     const usersOnlineList = document.getElementById('users-online-list');
     const adminSalesList = document.getElementById('admin-sales-list');
     const adminStartDate = document.getElementById('admin-start-date');
-    const adminEndDate   = document.getElementById('admin-end-date');
     const adminEndDate = document.getElementById('admin-end-date');
     const adminStoreFilter = document.getElementById('admin-store-filter');
     const adminApplyFilter = document.getElementById('admin-apply-filter');
     const adminClearFilter = document.getElementById('admin-clear-filter');
     const adminExportAll = document.getElementById('admin-export-all');
-    const userLocations  = document.getElementById('user-locations');
-    const currentUser    = document.getElementById('current-user');
     const userLocations = document.getElementById('user-locations');
     const currentUser = document.getElementById('current-user');
     const closeSalesModal = document.getElementById('close-sales-modal');
     const closeAdminModal = document.getElementById('close-admin-modal');
     const closeEditModal = document.getElementById('close-edit-modal');
-    const analyticsBtn   = document.getElementById('analytics-btn');
     const analyticsBtn = document.getElementById('analytics-btn');
     const analyticsModal = document.getElementById('analytics-modal');
     const closeAnalyticsModal = document.getElementById('close-analytics-modal');
@@ -1008,48 +924,26 @@
     }
 
     // Funciones Firebase
-    async function saveSaleToFirebase(sale) {
     async function backupSaleToFirebase(sale) {
       try {
-        const docRef = await db.collection("sales").add(sale);
-        showToast("Venta guardada en Firebase", "success");
-        return docRef.id;
         await db.collection('ventas').add({
           ...sale,
           backupTimestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         console.log("Venta respaldada en Firebase");
       } catch (error) {
-        console.error("Error guardando venta: ", error);
-        showToast("Error al guardar venta en Firebase", "error");
-        return null;
         console.error("Error al respaldar venta:", error);
         showToast('Error al respaldar venta', 'error');
       }
     }
 
-    async function updateSaleInFirebase(saleId, updatedData) {
     async function getSalesFromFirebase(store = 'all', startDate, endDate) {
       try {
-        await db.collection("sales").doc(saleId).update(updatedData);
-        showToast("Venta actualizada en Firebase", "success");
-        return true;
-      } catch (error) {
-        console.error("Error actualizando venta: ", error);
-        showToast("Error al actualizar venta en Firebase", "error");
-        return false;
-      }
-    }
         let query = db.collection('ventas')
           .where('timestamp', '>=', startDate.toISOString())
           .where('timestamp', '<=', endDate.toISOString())
           .orderBy('timestamp', 'desc');
 
-    async function deleteSaleFromFirebase(saleId) {
-      try {
-        await db.collection("sales").doc(saleId).delete();
-        showToast("Venta eliminada de Firebase", "success");
-        return true;
         if (store !== 'all') {
           query = query.where('store', '==', store);
         }
@@ -1057,36 +951,18 @@
         const snapshot = await query.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error("Error eliminando venta: ", error);
-        showToast("Error al eliminar venta de Firebase", "error");
-        return false;
         console.error("Error al obtener ventas:", error);
         showToast('Error al cargar ventas', 'error');
         return [];
       }
     }
 
-    async function getSalesFromFirebase(store, startDate, endDate) {
     async function syncAllSalesToFirebase() {
       if (!isMasterUser) return;
-      
+
       try {
-        let query = db.collection("sales");
-        
-        // Filtrar por tienda si no es "all"
-        if (store !== "all") {
-          query = query.where("store", "==", store);
-        }
         let total = 0;
 
-        // Filtrar por rango de fechas
-        if (startDate && endDate) {
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          end.setDate(end.getDate() + 1); // Incluir el día completo
-          
-          query = query.where("timestamp", ">=", start)
-                      .where("timestamp", "<", end);
         for (const [store, storeData] of Object.entries(salesData)) {
           for (const sale of storeData.sales) {
             await backupSaleToFirebase(sale);
@@ -1094,46 +970,23 @@
           }
         }
 
-        const querySnapshot = await query.get();
-        const sales = [];
-        querySnapshot.forEach(doc => {
-          sales.push({ id: doc.id, ...doc.data() });
-        });
-        return sales;
         showToast(`Se sincronizaron ${total} ventas a Firebase`, 'success');
       } catch (error) {
-        console.error("Error obteniendo ventas: ", error);
-        showToast("Error al obtener ventas de Firebase", "error");
-        return [];
         showToast('Error al sincronizar ventas', 'error');
         console.error("Error:", error);
       }
     }
 
-    async function getTodaySales(store) {
-      try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        let query = db.collection("sales")
-          .where("timestamp", ">=", startOfDay)
-          .where("store", "==", store);
-        
-        const querySnapshot = await query.get();
-        return querySnapshot.size;
-      } catch (error) {
-        console.error("Error obteniendo ventas de hoy: ", error);
-        return 0;
     // Almacenamiento local
     function getLocalStorageData() {
       const data = localStorage.getItem('salesData');
       return data ? JSON.parse(data) : {};
     }
-    
+
     function saveLocalStorageData() {
       localStorage.setItem('salesData', JSON.stringify(salesData));
     }
-    
+
     function initializeStoreData(store) {
       if (!salesData[store]) {
         salesData[store] = {
@@ -1146,31 +999,31 @@
         };
       }
     }
-    
+
     function updateStoreStats(store, items, payment) {
       initializeStoreData(store);
-      
+
       // Actualizar estadísticas
       salesData[store].stats.todaySales++;
       salesData[store].stats.todayItems += items.reduce((sum, item) => sum + item.quantity, 0);
-      
+
       // Actualizar métodos de pago
       if (salesData[store].stats.paymentMethods[payment]) {
         salesData[store].stats.paymentMethods[payment]++;
       } else {
         salesData[store].stats.paymentMethods[payment] = 1;
       }
-      
+
       saveLocalStorageData();
     }
-    
+
     function getStoreStats(store) {
       initializeStoreData(store);
       const stats = salesData[store].stats;
-      
+
       // Obtener fecha actual en formato YYYY-MM-DD
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Reiniciar estadísticas si es un nuevo día
       if (!stats.lastUpdated || stats.lastUpdated !== today) {
         stats.todaySales = 0;
@@ -1179,7 +1032,7 @@
         stats.lastUpdated = today;
         saveLocalStorageData();
       }
-      
+
       return stats;
     }
 
@@ -1189,14 +1042,12 @@
       localStorage.setItem('currentStore', store);
 
       // Registrar sesión activa
-      const activeSessions = JSON.parse(localStorage.getItem('activeSessions') || {};
       if (!activeSessions[store]) activeSessions[store] = [];
       if (!activeSessions[store].includes(user)) {
         activeSessions[store].push(user);
       }
       localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
 
-      showToast(`Bienvenido ${user}`, 'success');
       showToast(`Bienvenido ${users[user].displayName}`, 'success');
 
       // Iniciar temporizador de inactividad
@@ -1209,7 +1060,6 @@
       if (u && s) {
         currentUserData = u;
         currentStore = s;
-        isMasterUser = u === 'admin';
         isMasterUser = u === 'admin@accesorios.com';
         return true;
       }
@@ -1220,7 +1070,6 @@
       const user = localStorage.getItem('currentUser');
       const store = localStorage.getItem('currentStore');
 
-      const activeSessions = JSON.parse(localStorage.getItem('activeSessions') || {};
       if (user && store && activeSessions[store]) {
         activeSessions[store] = activeSessions[store].filter(u => u !== user);
         localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
@@ -1256,7 +1105,6 @@
       // Mostrar tienda del usuario
       userLocations.innerHTML = `<i class="fas fa-map-marker-alt mr-2"></i> ${currentStore}`;
 
-      currentUser.textContent = currentUserData;
       currentUser.textContent = users[currentUserData].displayName;
       currentStoreBadge.textContent = currentStore;
 
@@ -1265,86 +1113,45 @@
 
       // Mostrar filtro de tienda solo para admin
       storeFilterContainer.classList.toggle('hidden', !isMasterUser);
-      
+
       // Cargar datos de ventas
       salesData = getLocalStorageData();
-      
+
       // Actualizar UI
       updateSaleItemsDisplay();
       loadLastSale();
     }
 
-    async function updateAnalyticsStats() {
-      try {
-        const todaySales = await getTodaySales(currentStore);
-        analyticsTodaySales.textContent = todaySales;
-        
-        // Calcular progreso de ventas
-        const salesPercent = Math.min(Math.round((todaySales / 25) * 100), 100);
-        analyticsSalesProgress.style.width = `${salesPercent}%`;
-        analyticsSalesGoalPercent.textContent = `${salesPercent}%`;
-        
-        // Obtener estadísticas de artículos vendidos hoy
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        const querySnapshot = await db.collection("sales")
-          .where("timestamp", ">=", startOfDay)
-          .where("store", "==", currentStore)
-          .get();
-        
-        let totalItems = 0;
-        querySnapshot.forEach(doc => {
-          const sale = doc.data();
-          totalItems += sale.items.reduce((sum, item) => sum + item.quantity, 0);
-        });
-        
-        analyticsTodayItems.textContent = totalItems;
     function updateAnalyticsStats() {
       const stats = getStoreStats(currentStore);
-      
+
       analyticsTodaySales.textContent = stats.todaySales;
       analyticsTodayItems.textContent = stats.todayItems;
-      
+
       // Calcular promedio por venta
       const avg = stats.todaySales > 0 ? (stats.todayItems / stats.todaySales).toFixed(1) : 0;
       analyticsAvgPerSale.textContent = avg;
-      
+
       // Progreso de ventas
       const salesPercent = Math.min(Math.round((stats.todaySales / 25) * 100), 100);
       analyticsSalesProgress.style.width = `${salesPercent}%`;
       analyticsSalesGoalPercent.textContent = `${salesPercent}%`;
-      
+
       // Progreso de artículos
       const itemsPercent = Math.min(Math.round((stats.todayItems / 100) * 100), 100);
       analyticsItemsProgress.style.width = `${itemsPercent}%`;
       analyticsItemsChange.textContent = `+${itemsPercent}%`;
-      
+
       // Métodos de pago
       const paymentCount = Object.keys(stats.paymentMethods).length;
       analyticsPaymentMethods.textContent = paymentCount;
-      
+
       // Método de pago principal
       if (paymentCount > 0) {
         let maxPayment = '';
         let maxCount = 0;
         let total = 0;
 
-        // Calcular promedio por venta
-        const avg = todaySales > 0 ? (totalItems / todaySales).toFixed(1) : 0;
-        analyticsAvgPerSale.textContent = avg;
-        
-        // Progreso de artículos
-        const itemsPercent = Math.min(Math.round((totalItems / 100) * 100), 100);
-        analyticsItemsProgress.style.width = `${itemsPercent}%`;
-        analyticsItemsChange.textContent = `+${itemsPercent}%`;
-        
-        // Métodos de pago
-        const paymentMethods = {};
-        querySnapshot.forEach(doc => {
-          const payment = doc.data().payment;
-          paymentMethods[payment] = (paymentMethods[payment] || 0) + 1;
-        });
         for (const [payment, count] of Object.entries(stats.paymentMethods)) {
           total += count;
           if (count > maxCount) {
@@ -1353,52 +1160,11 @@
           }
         }
 
-        const paymentCount = Object.keys(paymentMethods).length;
-        analyticsPaymentMethods.textContent = paymentCount;
         const paymentPercent = Math.round((maxCount / total) * 100);
         analyticsMainPayment.textContent = maxPayment;
         analyticsMainPaymentPercent.textContent = `${paymentPercent}%`;
         analyticsPaymentProgress.style.width = `${paymentPercent}%`;
 
-        // Método de pago principal
-        if (paymentCount > 0) {
-          let maxPayment = '';
-          let maxCount = 0;
-          let total = 0;
-          
-          for (const [payment, count] of Object.entries(paymentMethods)) {
-            total += count;
-            if (count > maxCount) {
-              maxCount = count;
-              maxPayment = payment;
-            }
-          }
-          
-          const paymentPercent = Math.round((maxCount / total) * 100);
-          analyticsMainPayment.textContent = maxPayment;
-          analyticsMainPaymentPercent.textContent = `${paymentPercent}%`;
-          analyticsPaymentProgress.style.width = `${paymentPercent}%`;
-          
-          // Actualizar detalles de métodos de pago
-          paymentMethodsDetails.innerHTML = '';
-          for (const [payment, count] of Object.entries(paymentMethods)) {
-            const percent = Math.round((count / total) * 100);
-            const paymentElement = document.createElement('div');
-            paymentElement.className = 'flex justify-between items-center py-2 border-b';
-            paymentElement.innerHTML = `
-              <div class="font-medium">${payment}</div>
-              <div class="flex items-center">
-                <span class="mr-2">${count} ventas</span>
-                <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">${percent}%</span>
-              </div>
-            `;
-            paymentMethodsDetails.appendChild(paymentElement);
-          }
-        } else {
-          analyticsMainPayment.textContent = '-';
-          analyticsMainPaymentPercent.textContent = '0%';
-          analyticsPaymentProgress.style.width = '0%';
-          paymentMethodsDetails.innerHTML = '<p class="text-gray-500 text-center py-4">No hay datos de métodos de pago</p>';
         // Actualizar detalles de métodos de pago
         paymentMethodsDetails.innerHTML = '';
         for (const [payment, count] of Object.entries(stats.paymentMethods)) {
@@ -1414,8 +1180,6 @@
           `;
           paymentMethodsDetails.appendChild(paymentElement);
         }
-      } catch (error) {
-        console.error("Error cargando estadísticas: ", error);
       } else {
         analyticsMainPayment.textContent = '-';
         analyticsMainPaymentPercent.textContent = '0%';
@@ -1492,26 +1256,21 @@
         items: [...saleItems],
         payment: paymentSelect.value,
         manualTime: manualTimeInput.value || null,
-        timestamp: new Date()
         timestamp: new Date().toISOString()
       };
 
-      // Guardar venta en Firebase
-      const saleId = await saveSaleToFirebase(sale);
-      
-      if (saleId) {
       try {
         // Guardar venta en localStorage
         initializeStoreData(currentStore);
         salesData[currentStore].sales.push(sale);
         saveLocalStorageData();
-        
+
         // Actualizar estadísticas
         updateStoreStats(currentStore, saleItems, sale.payment);
-        
+
         // Respaldar en Firebase
         await backupSaleToFirebase(sale);
-        
+
         // Resetear formulario
         saleItems = [];
         paymentSelect.selectedIndex = 0;
@@ -1521,7 +1280,7 @@
         // Actualizar UI
         updateSaleItemsDisplay();
         loadLastSale();
-        
+
         showToast('Venta guardada exitosamente!', 'success');
       } catch (error) {
         showToast('Error al guardar la venta', 'error');
@@ -1535,88 +1294,33 @@
       showToast('Todos los artículos fueron eliminados', 'warning');
     }
 
-    async function loadLastSale() {
-      try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        const querySnapshot = await db.collection("sales")
-          .where("store", "==", currentStore)
-          .where("timestamp", ">=", startOfDay)
-          .orderBy("timestamp", "desc")
-          .limit(1)
-          .get();
-        
-        if (querySnapshot.empty) {
-          lastSaleContainer.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-              <i class="fas fa-receipt text-3xl mb-2"></i>
-              <p>No hay ventas registradas hoy</p>
-            </div>
-          `;
-          return;
-        }
-        
-        const lastSaleDoc = querySnapshot.docs[0];
-        const lastSale = lastSaleDoc.data();
-        const date = lastSale.timestamp.toDate();
-        const formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-        
-        let itemsHtml = lastSale.items.map(item => 
-          `<li>${item.quantity} ${item.category}</li>`
-        ).join('');
-        
-        lastSaleContainer.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-            <div>
-              <div class="font-semibold text-gray-700">Fecha:</div>
-              <div>${formattedDate}</div>
-            </div>
-            <div>
-              <div class="font-semibold text-gray-700">Tienda:</div>
-              <div>${lastSale.store}</div>
-            </div>
-            <div>
-              <div class="font-semibold text-gray-700">Método de pago:</div>
-              <div>${lastSale.payment}</div>
-            </div>
-          </div>
-          <div class="font-semibold text-gray-700 mb-2">Artículos:</div>
-          <ul class="list-disc pl-5">
-            ${itemsHtml}
-          </ul>
-        `;
-      } catch (error) {
-        console.error("Error cargando última venta: ", error);
     function loadLastSale() {
       initializeStoreData(currentStore);
       const sales = salesData[currentStore].sales;
-      
+
       if (sales.length === 0) {
         lastSaleContainer.innerHTML = `
           <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
-            <p>Error al cargar la última venta</p>
             <i class="fas fa-receipt text-3xl mb-2"></i>
             <p>No hay ventas registradas hoy</p>
           </div>
         `;
         return;
       }
-      
+
       const lastSale = sales[sales.length - 1];
       const date = new Date(lastSale.timestamp);
       let formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-      
+
       // Usar hora manual si existe
       if (lastSale.manualTime) {
         formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${lastSale.manualTime}`;
       }
-      
+
       let itemsHtml = lastSale.items.map(item => 
         `<li>${item.quantity} ${item.category}</li>`
       ).join('');
-      
+
       lastSaleContainer.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
           <div>
@@ -1639,17 +1343,11 @@
       `;
     }
 
-    async function openEditModal(saleId) {
-      try {
-        const doc = await db.collection("sales").doc(saleId).get();
-        if (!doc.exists) {
-          showToast("Venta no encontrada", "error");
-          return;
     function openEditModal(saleId) {
       // Buscar la venta en todas las tiendas
       let saleToEdit = null;
       let saleStore = '';
-      
+
       for (const [store, data] of Object.entries(salesData)) {
         const sale = data.sales.find(s => s.id === saleId);
         if (sale) {
@@ -1658,16 +1356,16 @@
           break;
         }
       }
-      
+
       if (!saleToEdit) return;
-      
+
       // Guardar ID y tienda para referencia
       editSaleId.value = saleId;
       editSaleStore.value = saleStore;
-      
+
       // Llenar los campos de edición
       editItemsContainer.innerHTML = '';
-      
+
       saleToEdit.items.forEach((item, index) => {
         const itemElement = document.createElement('div');
         itemElement.className = 'edit-item-row';
@@ -1690,135 +1388,61 @@
         `;
         editItemsContainer.appendChild(itemElement);
 
-        const sale = doc.data();
-        
-        // Guardar ID y tienda para referencia
-        editSaleId.value = saleId;
-        editSaleStore.value = sale.store;
-        
-        // Llenar los campos de edición
-        editItemsContainer.innerHTML = '';
-        
-        sale.items.forEach((item, index) => {
-          const itemElement = document.createElement('div');
-          itemElement.className = 'edit-item-row';
-          itemElement.innerHTML = `
-            <select class="p-2 border border-gray-300 rounded-lg flex-1 edit-item-category">
-              <option value="Articulos" ${item.category === 'Articulos' ? 'selected' : ''}>Artículos</option>
-              <option value="Articulos (P)" ${item.category === 'Articulos (P)' ? 'selected' : ''}>Artículos (P)</option>
-              <option value="Bisuteria" ${item.category === 'Bisuteria' ? 'selected' : ''}>Bisutería</option>
-              <option value="Bisuteria (P)" ${item.category === 'Bisuteria (P)' ? 'selected' : ''}>Bisutería (P)</option>
-              <option value="Zapato" ${item.category === 'Zapato' ? 'selected' : ''}>Zapato</option>
-              <option value="Zapato (P)" ${item.category === 'Zapato (P)' ? 'selected' : ''}>Zapato (P)</option>
-              <option value="Prenda" ${item.category === 'Prenda' ? 'selected' : ''}>Prenda</option>
-              <option value="Prenda (P)" ${item.category === 'Prenda (P)' ? 'selected' : ''}>Prenda (P)</option>
-              <option value="B.Eco" ${item.category === 'B.Eco' ? 'selected' : ''}>B.Eco</option>
-            </select>
-            <input type="number" min="1" value="${item.quantity}" class="w-20 p-2 border border-gray-300 rounded-lg edit-item-quantity">
-            <button class="remove-edit-item bg-red-100 text-red-600 p-2 rounded-lg">
-              <i class="fas fa-trash"></i>
-            </button>
-          `;
-          editItemsContainer.appendChild(itemElement);
-          
-          // Agregar evento de eliminación
-          itemElement.querySelector('.remove-edit-item').addEventListener('click', () => {
-            itemElement.remove();
-          });
         // Agregar evento de eliminación
         itemElement.querySelector('.remove-edit-item').addEventListener('click', () => {
           itemElement.remove();
         });
-        
-        // Seleccionar método de pago
-        editPayment.value = sale.payment;
-        
-        // Hora manual
-        if (sale.manualTime) {
-          const timeParts = sale.manualTime.split(':');
-          const timeValue = `${timeParts[0]}:${timeParts[1]}`;
-          editManualTime.value = timeValue;
-        } else {
-          editManualTime.value = '';
-        }
-        
-        // Mostrar modal
-        editSaleModal.classList.add('show');
-      } catch (error) {
-        console.error("Error abriendo venta para edición: ", error);
-        showToast("Error al cargar venta para edición", "error");
-      }
       });
-      
+
       // Seleccionar método de pago
       editPayment.value = saleToEdit.payment;
-      
+
       // Hora manual
       editManualTime.value = saleToEdit.manualTime || '';
-      
+
       // Mostrar modal
       editSaleModal.classList.add('show');
     }
 
-    async function saveEditedSale() {
-      const saleId = editSaleId.value;
-      if (!saleId) return;
     function saveEditedSale() {
       const saleId = parseInt(editSaleId.value);
       const store = editSaleStore.value;
       if (!saleId || !store) return;
-      
+
       // Buscar la venta
       const storeData = salesData[store];
       if (!storeData) return;
-      
+
       const saleIndex = storeData.sales.findIndex(s => s.id === saleId);
       if (saleIndex === -1) return;
-      
+
       const saleToEdit = storeData.sales[saleIndex];
       const originalSale = JSON.parse(JSON.stringify(saleToEdit)); // Copia profunda
-      
+
       // Actualizar artículos
       saleToEdit.items = [];
 
-      // Obtener los artículos editados
-      const editedItems = [];
       document.querySelectorAll('.edit-item-row').forEach(row => {
         const category = row.querySelector('.edit-item-category').value;
         const quantity = parseInt(row.querySelector('.edit-item-quantity').value) || 1;
 
         if (category) {
-          editedItems.push({ category, quantity });
           saleToEdit.items.push({ category, quantity });
         }
       });
 
-      // Crear objeto con datos actualizados
-      const updatedData = {
-        items: editedItems,
-        payment: editPayment.value,
-        manualTime: editManualTime.value || null
-      };
       // Actualizar otros campos
       saleToEdit.payment = editPayment.value;
       saleToEdit.manualTime = editManualTime.value || null;
 
-      // Actualizar en Firebase
-      const success = await updateSaleInFirebase(saleId, updatedData);
       // Verificar si la venta es de hoy
       const today = new Date().toISOString().split('T')[0];
       const saleDate = new Date(saleToEdit.timestamp).toISOString().split('T')[0];
 
-      if (success) {
-        // Cerrar modal
-        editSaleModal.classList.remove('show');
       if (saleDate === today) {
         // Actualizar estadísticas
         const stats = salesData[store].stats;
 
-        // Actualizar UI
-        loadSales();
-        loadLastSale();
         // Restar la venta original (con protección para valores negativos)
         stats.todayItems = Math.max(0, stats.todayItems - originalSale.items.reduce((sum, item) => sum + item.quantity, 0));
         if (stats.paymentMethods[originalSale.payment]) {
@@ -1827,7 +1451,7 @@
             delete stats.paymentMethods[originalSale.payment];
           }
         }
-        
+
         // Sumar la venta editada
         stats.todayItems += saleToEdit.items.reduce((sum, item) => sum + item.quantity, 0);
         if (stats.paymentMethods[saleToEdit.payment]) {
@@ -1836,53 +1460,42 @@
           stats.paymentMethods[saleToEdit.payment] = 1;
         }
       }
-      
+
       // Guardar cambios
       saveLocalStorageData();
-      
+
       // Actualizar UI
       loadSales();
       loadLastSale();
-      
+
       // Cerrar modal
       editSaleModal.classList.remove('show');
-      
+
       showToast('Venta actualizada exitosamente', 'success');
     }
 
-    async function deleteSale() {
-      const saleId = editSaleId.value;
-      if (!saleId) return;
-      
-      if (confirm('¿Estás seguro de eliminar esta venta?')) {
-        const success = await deleteSaleFromFirebase(saleId);
-        
-        if (success) {
-          // Cerrar modal
-          editSaleModal.classList.remove('show');
     function deleteSale() {
       const saleId = parseInt(editSaleId.value);
       const store = editSaleStore.value;
       if (!saleId || !store) return;
-      
+
       // Buscar y eliminar la venta
       const storeData = salesData[store];
       if (storeData) {
         const index = storeData.sales.findIndex(s => s.id === saleId);
         if (index !== -1) {
           const saleToDelete = storeData.sales[index];
-          
+
           // Verificar si la venta es de hoy
           const today = new Date().toISOString().split('T')[0];
           const saleDate = new Date(saleToDelete.timestamp).toISOString().split('T')[0];
 
-          // Actualizar UI
           if (saleDate === today) {
             // Actualizar estadísticas con protección para valores negativos
             const stats = salesData[store].stats;
             stats.todaySales = Math.max(0, stats.todaySales - 1);
             stats.todayItems = Math.max(0, stats.todayItems - saleToDelete.items.reduce((sum, item) => sum + item.quantity, 0));
-            
+
             if (stats.paymentMethods[saleToDelete.payment]) {
               stats.paymentMethods[saleToDelete.payment]--;
               if (stats.paymentMethods[saleToDelete.payment] <= 0) {
@@ -1890,7 +1503,7 @@
               }
             }
           }
-          
+
           storeData.sales.splice(index, 1);
           saveLocalStorageData();
           loadSales();
@@ -1902,52 +1515,14 @@
     }
 
     async function loadSales() {
-      let startDateValue = startDateInput.value;
-      let endDateValue = endDateInput.value;
-      
-      // Si no hay fecha de inicio, usar hoy
-      if (!startDateValue) {
-        startDateValue = new Date().toISOString().split('T')[0];
-        startDateInput.value = startDateValue;
-      }
       const startDate = new Date(startDateInput.value);
       const endDate = new Date(endDateInput.value);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
 
-      // Si no hay fecha fin, usar hoy
-      if (!endDateValue) {
-        endDateValue = new Date().toISOString().split('T')[0];
-        endDateInput.value = endDateValue;
-      }
-      
-      // Determinar tienda para la consulta
-      let store = storeFilter.value;
-      if (!isMasterUser) {
-        store = currentStore; // Usuarios normales solo ven su tienda
-      }
       const store = isMasterUser ? storeFilter.value : currentStore;
 
-      // Obtener ventas de Firebase
-      const sales = await getSalesFromFirebase(store, startDateValue, endDateValue);
-      
-      // Mostrar ventas
       salesList.innerHTML = '';
 
-      if (sales.length === 0) {
-        salesList.innerHTML = `
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-receipt text-3xl mb-2"></i>
-            <p>No se encontraron ventas</p>
-          </div>
-        `;
-        return;
-      }
-      
-      // Agrupar por tienda
-      const salesByStore = {};
-      sales.forEach(sale => {
-        if (!salesByStore[sale.store]) {
-          salesByStore[sale.store] = [];
       // Si es admin, intentar cargar de Firebase primero
       if (isMasterUser) {
         try {
@@ -1959,46 +1534,37 @@
         } catch (error) {
           console.error("Error al cargar de Firebase, mostrando localStorage:", error);
         }
-        salesByStore[sale.store].push(sale);
-      });
       }
 
-      // Mostrar ventas agrupadas por tienda
-      for (const [storeName, storeSales] of Object.entries(salesByStore)) {
-        // Encabezado de tienda
       // Cargar de localStorage si no es admin o si falló Firebase
       loadSalesFromLocalStorage(store, startDate, endDate);
     }
-    
+
     function loadSalesFromLocalStorage(store, startDate, endDate) {
       // Recorrer todas las tiendas
       for (const [storeName, storeData] of Object.entries(salesData)) {
         // Filtrar por tienda si es necesario
         if (store !== 'all' && store !== storeName) continue;
-        
+
         // Filtrar ventas por fecha
         const filteredSales = storeData.sales.filter(sale => {
           const saleDate = new Date(sale.timestamp);
           return saleDate >= startDate && saleDate < endDate;
         });
-        
+
         if (filteredSales.length === 0) continue;
-        
+
         // Crear encabezado de tienda
         const storeHeader = document.createElement('div');
         storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
         storeHeader.textContent = `Tienda: ${storeName}`;
         salesList.appendChild(storeHeader);
 
-        // Mostrar ventas de esta tienda
-        storeSales.forEach(sale => {
-          const date = sale.timestamp.toDate();
-          const formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
         // Agregar ventas
         filteredSales.forEach(sale => {
           const dateObj = new Date(sale.timestamp);
           let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-          
+
           // Usar hora manual si existe
           if (sale.manualTime) {
             formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
@@ -2014,7 +1580,6 @@
             <div class="flex justify-between items-start">
               <div>
                 <div class="font-semibold">${formattedDate}</div>
-                <div class="text-sm text-gray-600">Usuario: ${sale.user}</div>
                 <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
               </div>
               <div class="flex gap-2">
@@ -2042,7 +1607,6 @@
       // Agregar event listeners
       document.querySelectorAll('.edit-sale-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const saleId = btn.dataset.id;
           const saleId = parseInt(btn.dataset.id);
           openEditModal(saleId);
         });
@@ -2050,29 +1614,24 @@
 
       document.querySelectorAll('.delete-sale-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const saleId = btn.dataset.id;
           const saleId = parseInt(btn.dataset.id);
           if (confirm('¿Estás seguro de eliminar esta venta?')) {
-            deleteSaleFromFirebase(saleId).then(() => {
-              loadSales();
-              loadLastSale();
-            });
             // Buscar y eliminar la venta
             for (const [store, data] of Object.entries(salesData)) {
               const index = data.sales.findIndex(s => s.id === saleId);
               if (index !== -1) {
                 const saleToDelete = data.sales[index];
-                
+
                 // Verificar si la venta es de hoy
                 const today = new Date().toISOString().split('T')[0];
                 const saleDate = new Date(saleToDelete.timestamp).toISOString().split('T')[0];
-                
+
                 if (saleDate === today) {
                   // Actualizar estadísticas con protección para valores negativos
                   const stats = data.stats;
                   stats.todaySales = Math.max(0, stats.todaySales - 1);
                   stats.todayItems = Math.max(0, stats.todayItems - saleToDelete.items.reduce((sum, item) => sum + item.quantity, 0));
-                  
+
                   if (stats.paymentMethods[saleToDelete.payment]) {
                     stats.paymentMethods[saleToDelete.payment]--;
                     if (stats.paymentMethods[saleToDelete.payment] <= 0) {
@@ -2080,7 +1639,7 @@
                     }
                   }
                 }
-                
+
                 data.sales.splice(index, 1);
                 saveLocalStorageData();
                 loadSales();
@@ -2094,120 +1653,60 @@
       });
     }
 
-    async function loadAdminSales() {
-      let startDateValue = adminStartDate.value;
-      let endDateValue = adminEndDate.value;
-      
-      if (!startDateValue) {
-        startDateValue = new Date().toISOString().split('T')[0];
-        adminStartDate.value = startDateValue;
-      }
-      
-      if (!endDateValue) {
-        endDateValue = new Date().toISOString().split('T')[0];
-        adminEndDate.value = endDateValue;
-      }
-      
-      // Obtener todas las ventas
-      const store = adminStoreFilter.value;
-      const sales = await getSalesFromFirebase(store, startDateValue, endDateValue);
-      
-      // Mostrar ventas
-      adminSalesList.innerHTML = '';
-      
     function displaySales(sales, store) {
       if (sales.length === 0) {
-        adminSalesList.innerHTML = `
         salesList.innerHTML = `
           <div class="text-center py-8 text-gray-500">
             <i class="fas fa-receipt text-3xl mb-2"></i>
-            <p>No se encontraron ventas</p>
             <p>No hay ventas en el rango seleccionado</p>
           </div>
         `;
         return;
       }
 
-      // Agrupar por tienda
-      const salesByStore = {};
-      sales.forEach(sale => {
-        if (!salesByStore[sale.store]) {
-          salesByStore[sale.store] = [];
       // Agrupar por tienda si es admin y se seleccionó "todas"
       if (isMasterUser && store === 'all') {
         const salesByStore = {};
-        
+
         sales.forEach(sale => {
           if (!salesByStore[sale.store]) {
             salesByStore[sale.store] = [];
           }
           salesByStore[sale.store].push(sale);
         });
-        
+
         for (const [store, storeSales] of Object.entries(salesByStore)) {
           const storeHeader = document.createElement('div');
           storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
           storeHeader.textContent = `Tienda: ${store}`;
           salesList.appendChild(storeHeader);
-          
+
           storeSales.forEach(sale => createSaleElement(sale));
         }
-        salesByStore[sale.store].push(sale);
-      });
-      
-      // Mostrar ventas agrupadas por tienda
-      for (const [storeName, storeSales] of Object.entries(salesByStore)) {
-        // Encabezado de tienda
       } else {
         // Mostrar sin agrupar si se seleccionó una tienda específica
         const storeHeader = document.createElement('div');
         storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
-        storeHeader.textContent = `Tienda: ${storeName}`;
-        adminSalesList.appendChild(storeHeader);
         storeHeader.textContent = `Tienda: ${store}`;
         salesList.appendChild(storeHeader);
 
-        // Mostrar ventas de esta tienda
-        storeSales.forEach(sale => {
-          const date = sale.timestamp.toDate();
-          const formattedDate = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-          
-          let itemsHtml = sale.items.map(item => 
-            `<li>${item.quantity} ${item.category}</li>`
-          ).join('');
-          
-          const saleElement = document.createElement('div');
-          saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
-          saleElement.innerHTML = `
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-semibold">${formattedDate}</div>
-                <div class="text-sm text-gray-600">Usuario: ${sale.user}</div>
-              </div>
-            </div>
-            <div class="mt-2">
-              <div class="font-semibold">Método de pago: ${sale.payment}</div>
-              <div class="font-semibold mt-1">Artículos:</div>
-              <ul class="list-disc pl-5">
-                ${itemsHtml}
-              </ul>
         sales.forEach(sale => createSaleElement(sale));
       }
     }
-    
+
     function createSaleElement(sale) {
       const dateObj = new Date(sale.timestamp);
       let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-      
+
       // Usar hora manual si existe
       if (sale.manualTime) {
         formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
       }
-      
+
       let itemsHtml = sale.items.map(item => 
         `<li>${item.quantity} ${item.category}</li>`
       ).join('');
-      
+
       const saleElement = document.createElement('div');
       saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
       saleElement.innerHTML = `
@@ -2234,23 +1733,23 @@
           </ul>
         </div>
       `;
-      
+
       salesList.appendChild(saleElement);
     }
-    
+
     async function loadAdminSales() {
       const startDate = new Date(adminStartDate.value);
       const endDate = new Date(adminEndDate.value);
       endDate.setDate(endDate.getDate() + 1); // Incluir todo el día final
-      
+
       const store = adminStoreFilter.value;
-      
+
       adminSalesList.innerHTML = '';
-      
+
       try {
         // Obtener ventas de Firebase
         const firebaseSales = await getSalesFromFirebase(store, startDate, endDate);
-        
+
         if (firebaseSales.length === 0) {
           adminSalesList.innerHTML = `
             <div class="text-center py-8 text-gray-500">
@@ -2258,11 +1757,9 @@
               <p>No hay ventas en el rango seleccionado</p>
             </div>
           `;
-          
-          adminSalesList.appendChild(saleElement);
           return;
         }
-        
+
         // Mostrar ventas agrupadas por tienda
         const salesByStore = {};
         firebaseSales.forEach(sale => {
@@ -2271,16 +1768,19 @@
           }
           salesByStore[sale.store].push(sale);
         });
-        
+
         for (const [storeName, storeSales] of Object.entries(salesByStore)) {
           // Solo mostrar tiendas si se seleccionó "todas" o si coincide con la tienda seleccionada
           if (store === 'all' || store === storeName) {
+        // Mostrar todas las tiendas si se seleccionó "todas"
+        if (store === 'all') {
+          for (const [storeName, storeSales] of Object.entries(salesByStore)) {
             // Encabezado de tienda
             const storeHeader = document.createElement('div');
             storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
             storeHeader.textContent = `Tienda: ${storeName}`;
             adminSalesList.appendChild(storeHeader);
-            
+
             storeSales.forEach(sale => {
               const dateObj = new Date(sale.timestamp);
               let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
@@ -2313,6 +1813,18 @@
               `;
               adminSalesList.appendChild(saleElement);
             });
+            storeSales.forEach(sale => createAdminSaleElement(sale));
+          }
+        } else {
+          // Mostrar solo la tienda seleccionada
+          if (salesByStore[store] && salesByStore[store].length > 0) {
+            // Encabezado de tienda
+            const storeHeader = document.createElement('div');
+            storeHeader.className = 'font-bold text-lg mt-4 mb-2 text-blue-600';
+            storeHeader.textContent = `Tienda: ${store}`;
+            adminSalesList.appendChild(storeHeader);
+            
+            salesByStore[store].forEach(sale => createAdminSaleElement(sale));
           }
         }
       } catch (error) {
@@ -2326,14 +1838,44 @@
       }
     }
 
+    function createAdminSaleElement(sale) {
+      const dateObj = new Date(sale.timestamp);
+      let formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+      
+      // Usar hora manual si existe
+      if (sale.manualTime) {
+        formattedDate = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()} ${sale.manualTime}`;
+      }
+      
+      let itemsHtml = sale.items.map(item => 
+        `<li>${item.quantity} ${item.category}</li>`
+      ).join('');
+      
+      const saleElement = document.createElement('div');
+      saleElement.className = 'border border-gray-200 rounded-lg p-4 mb-3';
+      saleElement.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="font-semibold">${formattedDate}</div>
+            <div class="text-sm text-gray-600">Usuario: ${users[sale.user]?.displayName || sale.user}</div>
+            <div class="text-sm text-gray-600">Tienda: ${sale.store}</div>
+          </div>
+        </div>
+        <div class="mt-2">
+          <div class="font-semibold">Método de pago: ${sale.payment}</div>
+          <div class="font-semibold mt-1">Artículos:</div>
+          <ul class="list-disc pl-5">
+            ${itemsHtml}
+          </ul>
+        </div>
+      `;
+      adminSalesList.appendChild(saleElement);
+    }
+    
     function loadOnlineUsers() {
       usersOnlineList.innerHTML = '';
 
-      const activeSessions = JSON.parse(localStorage.getItem('activeSessions') || {});
-      
       // Recorrer todas las tiendas
-      for (const [store, users] of Object.entries(activeSessions)) {
-        if (users.length === 0) continue;
       for (const [store, usersList] of Object.entries(activeSessions)) {
         if (usersList.length === 0) continue;
 
@@ -2344,7 +1886,6 @@
         usersOnlineList.appendChild(storeHeader);
 
         // Usuarios por tienda
-        users.forEach(user => {
         usersList.forEach(user => {
           const userElement = document.createElement('div');
           userElement.className = 'bg-white p-4 rounded-lg shadow border border-gray-200';
@@ -2353,7 +1894,6 @@
               <div>
                 <div class="font-medium flex items-center">
                   <span class="online-status online"></span>
-                  ${user}
                   ${users[user]?.displayName || user}
                 </div>
                 <div class="text-sm text-gray-600">${store}</div>
@@ -2374,90 +1914,43 @@
           const store = btn.dataset.store;
 
           // Eliminar usuario de sesiones activas
-          const activeSessions = JSON.parse(localStorage.getItem('activeSessions') || {});
           if (activeSessions[store]) {
             activeSessions[store] = activeSessions[store].filter(u => u !== user);
             localStorage.setItem('activeSessions', JSON.stringify(activeSessions));
             loadOnlineUsers();
-            showToast(`Usuario ${user} desconectado de ${store}`, 'success');
             showToast(`Usuario ${users[user]?.displayName || user} desconectado de ${store}`, 'success');
           }
         });
       });
     }
 
-    async function exportStoreToExcel(storeName) {
-      try {
-        // Obtener todas las ventas de la tienda
-        const sales = await getSalesFromFirebase(storeName);
-        
-        if (sales.length === 0) {
-          showToast(`No hay ventas para exportar en ${storeName}`, 'error');
-          return;
-        }
-        
-        // Definir categorías para las columnas
-        const categories = [
-          'Articulos', 'Articulos (P)', 'Bisuteria', 'Bisuteria (P)', 
-          'Zapato', 'Zapato (P)', 'Prenda', 'Prenda (P)', 'B.Eco'
-        ];
     function exportStoreToExcel(storeName, storeData) {
       // Definir categorías para las columnas
       const categories = [
         'Articulos', 'Articulos (P)', 'Bisuteria', 'Bisuteria (P)', 
         'Zapato', 'Zapato (P)', 'Prenda', 'Prenda (P)', 'B.Eco'
       ];
-      
+
       // Crear array de datos para la hoja
       const excelData = [];
-      
+
       // Encabezados
       const headers = ['Fecha', 'Hora', 'Ubicación', 'Método de Pago', ...categories];
       excelData.push(headers);
-      
+
       // Llenar filas
       storeData.sales.forEach(sale => {
         const dateObj = new Date(sale.timestamp);
         const date = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
         const time = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
 
-        // Crear array de datos para la hoja
-        const excelData = [];
         // Filas
         const row = [date, time, storeName, sale.payment];
 
-        // Encabezados
-        const headers = ['Fecha', 'Hora', 'Tienda', 'Usuario', 'Método de Pago', ...categories];
-        excelData.push(headers);
         // Inicializar contadores de categorías
         const categoryCounts = {};
         categories.forEach(cat => categoryCounts[cat] = 0);
 
-        // Llenar filas
-        sales.forEach(sale => {
-          const date = sale.timestamp.toDate();
-          const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
-          const timeStr = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-          
-          const row = [dateStr, timeStr, sale.store, sale.user, sale.payment];
-          
-          // Inicializar contadores de categorías
-          const categoryCounts = {};
-          categories.forEach(cat => categoryCounts[cat] = 0);
-          
-          // Contar artículos por categoría
-          sale.items.forEach(item => {
-            if (categoryCounts.hasOwnProperty(item.category)) {
-              categoryCounts[item.category] += item.quantity;
-            }
-          });
-          
-          // Agregar contadores a la fila
-          categories.forEach(cat => {
-            row.push(categoryCounts[cat]);
-          });
-          
-          excelData.push(row);
         // Contar artículos por categoría
         sale.items.forEach(item => {
           if (categoryCounts.hasOwnProperty(item.category)) {
@@ -2465,65 +1958,45 @@
           }
         });
 
-        // Crear libro de Excel
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(excelData);
-        XLSX.utils.book_append_sheet(wb, ws, storeName);
         // Agregar contadores a la fila
         categories.forEach(cat => {
           row.push(categoryCounts[cat]);
         });
 
-        // Generar archivo y descargar
-        XLSX.writeFile(wb, `${storeName}_ventas.xlsx`);
-        showToast(`Exportación de ${storeName} completada`, 'success');
-      } catch (error) {
-        console.error("Error exportando tienda: ", error);
-        showToast(`Error al exportar ${storeName}`, 'error');
-      }
         excelData.push(row);
       });
-      
+
       // Crear libro de Excel
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(excelData);
       XLSX.utils.book_append_sheet(wb, ws, storeName);
-      
+
       // Generar archivo y descargar
       XLSX.writeFile(wb, `${storeName}_ventas.xlsx`);
     }
 
-    async function exportToExcel() {
-      await exportStoreToExcel(currentStore);
     function exportToExcel() {
       const storeData = salesData[currentStore];
       if (!storeData || storeData.sales.length === 0) {
         showToast('No hay ventas para exportar', 'error');
         return;
       }
-      
+
       exportStoreToExcel(currentStore, storeData);
       showToast('Exportación completada', 'success');
     }
 
-    async function exportAllStoresToExcel() {
-      // Obtener todas las tiendas únicas
-      const stores = [
-        '506', 'centro', 'pavas', 'terramall', 'escazu', 
-        'hot', 'desamparados', 'canonazo', 'sabanilla'
-      ];
     function exportAllStoresToExcel() {
       let hasData = false;
 
-      for (const store of stores) {
-        await exportStoreToExcel(store);
       for (const [storeName, storeData] of Object.entries(salesData)) {
         if (storeData.sales.length > 0) {
+          // Exportar cada tienda en un archivo separado
           exportStoreToExcel(storeName, storeData);
           hasData = true;
         }
       }
-      
+
       if (hasData) {
         showToast('Todas las tiendas exportadas', 'success');
       } else {
@@ -2535,7 +2008,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Cargar sesiones activas
       activeSessions = JSON.parse(localStorage.getItem('activeSessions') || '{}');
-      
+
       // Configurar fecha actual en los filtros
       const today = new Date().toISOString().split('T')[0];
       startDateInput.value = today;
@@ -2566,7 +2039,6 @@
         const user = users[username];
         if (user && user.password === password) {
           // Verificar si el usuario tiene acceso a la tienda
-          if (username !== 'admin' && !user.stores.includes(store)) {
           if (username !== 'admin@accesorios.com' && !user.stores.includes(store)) {
             errorMessage.textContent = 'No tiene acceso a esta tienda';
             errorMessage.classList.remove('hidden');
@@ -2574,8 +2046,6 @@
           }
 
           // Verificar límite de sesiones por tienda (solo si no es admin)
-          if (username !== 'admin') {
-            const activeSessions = JSON.parse(localStorage.getItem('activeSessions') || {});
           if (username !== 'admin@accesorios.com') {
             if (activeSessions[store] && activeSessions[store].length >= 2) {
               errorMessage.textContent = 'Límite de usuarios alcanzado para esta tienda';
@@ -2586,7 +2056,6 @@
 
           currentUserData = username;
           currentStore = store;
-          isMasterUser = username === 'admin';
           isMasterUser = username === 'admin@accesorios.com';
           saveSession(username, store);
           showMainContent();
@@ -2619,8 +2088,6 @@
       // Ver ventas
       viewSalesBtn.addEventListener('click', () => {
         salesModal.classList.add('show');
-        // Ocultar filtro de tienda para usuarios normales
-        storeFilterContainer.style.display = isMasterUser ? 'flex' : 'none';
         loadSales();
       });
 
@@ -2634,14 +2101,13 @@
       clearFilterBtn.addEventListener('click', () => {
         startDateInput.value = today;
         endDateInput.value = today;
-        storeFilter.value = isMasterUser ? 'all' : currentStore;
         storeFilter.value = 'all';
         loadSales();
       });
 
       // Sincronizar con Firebase
       syncFirebaseBtn.addEventListener('click', syncAllSalesToFirebase);
-      
+
       // Panel de administración
       adminPanelBtn.addEventListener('click', () => {
         adminModal.classList.add('show');
@@ -2674,7 +2140,6 @@
       // Cambiar cantidad
       decreaseQtyBtn.addEventListener('click', () => {
         const current = parseInt(quantityInput.value) || 1;
-        if (current > 1) quantityInput.value = current - 1;
         if (current > 1) {
           quantityInput.value = current - 1;
         }
