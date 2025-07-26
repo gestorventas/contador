@@ -286,10 +286,10 @@
       </div>
       
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">Contraseña</label>
+        <label class="block text-sm font-medium text-gray-700">Contraseńa</label>
         <div class="relative">
           <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-          <input type="password" id="password" placeholder="Ingrese su contraseña" required 
+          <input type="password" id="password" placeholder="Ingrese su contraseńa" required 
                  class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
       </div>
@@ -305,7 +305,7 @@
           <option value="escazu">Escazú</option>
           <option value="hot">Hot</option>
           <option value="desamparados">Desamparados</option>
-          <option value="canonazo">Cañonazo</option>
+          <option value="canonazo">Cańonazo</option>
           <option value="sabanilla">Sabanilla</option>
         </select>
       </div>
@@ -588,7 +588,7 @@
             <option value="escazu">Escazú</option>
             <option value="hot">Hot</option>
             <option value="desamparados">Desamparados</option>
-            <option value="canonazo">Cañonazo</option>
+            <option value="canonazo">Cańonazo</option>
             <option value="sabanilla">Sabanilla</option>
           </select>
         </div>
@@ -715,7 +715,7 @@
                 <option value="escazu">Escazú</option>
                 <option value="hot">Hot</option>
                 <option value="desamparados">Desamparados</option>
-                <option value="canonazo">Cañonazo</option>
+                <option value="canonazo">Cańonazo</option>
                 <option value="sabanilla">Sabanilla</option>
               </select>
             </div>
@@ -728,9 +728,13 @@
               </button>
             </div>
           </div>
-          <div class="flex justify-end mb-4">
+          <div class="flex justify-end mb-4 gap-2">
             <button id="admin-export-all" class="export-btn">
-              <i class="fas fa-file-archive mr-2"></i> Exportar todas las ventas
+              <i class="fas fa-file-archive mr-2"></i> Exportar por tienda
+            </button>
+            <!-- Nuevo botón para exportar todo en un archivo -->
+            <button id="admin-export-all-in-one" class="export-btn bg-purple-600">
+              <i class="fas fa-file-excel mr-2"></i> Exportar todo en un archivo
             </button>
             <div id="export-status" class="ml-3 mt-2 text-sm hidden">
               <i class="fas fa-spinner exporting-spinner mr-2"></i>
@@ -841,12 +845,12 @@
       'canonazo1@accesorios.com': { 
         password: 'Canonazo1Acc123#', 
         stores: ['canonazo'],
-        displayName: 'Cañonazo 1'
+        displayName: 'Cańonazo 1'
       },
       'canonazo2@accesorios.com': { 
         password: 'Canonazo2Vent456!', 
         stores: ['canonazo'],
-        displayName: 'Cañonazo 2'
+        displayName: 'Cańonazo 2'
       },
       'sabanilla1@accesorios.com': { 
         password: 'Sabanilla1Acc789$', 
@@ -935,6 +939,7 @@
     const analyticsMainPaymentPercent = document.getElementById('analytics-main-payment-percent');
     const analyticsPaymentProgress = document.getElementById('analytics-payment-progress');
     const paymentMethodsDetails = document.getElementById('payment-methods-details');
+    const adminExportAllInOne = document.getElementById('admin-export-all-in-one');
 
     // Variables de estado
     let currentUserData = null;
@@ -1678,7 +1683,7 @@
       document.querySelectorAll('.delete-sale-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const saleId = parseInt(btn.dataset.id);
-          if (confirm('¿Estás seguro de eliminar esta venta?')) {
+          if (confirm('żEstás seguro de eliminar esta venta?')) {
             // Buscar y eliminar la venta
             for (const [store, data] of Object.entries(salesData)) {
               const index = data.sales.findIndex(s => s.id === saleId);
@@ -2046,7 +2051,7 @@
           exportMessage.textContent = `Exportando ${store}...`;
           await exportStoreToExcel(store);
           
-          // Pequeña pausa entre descargas
+          // Pequeńa pausa entre descargas
           await new Promise(resolve => setTimeout(resolve, 500));
         }
         showToast('Exportación completa de todas las tiendas', 'success');
@@ -2055,6 +2060,102 @@
       } finally {
         exportStatus.classList.add('hidden');
       }
+    }
+    
+    // Nueva función para exportar todas las ventas en un solo archivo
+    async function exportAllInOneExcel() {
+      const startDate = new Date(document.getElementById('admin-start-date').value + 'T00:00:00Z');
+      const endDate = new Date(document.getElementById('admin-end-date').value + 'T23:59:59Z');
+      
+      try {
+        exportStatus.classList.remove('hidden');
+        exportMessage.textContent = 'Recopilando datos...';
+        
+        // Obtener todas las tiendas
+        const stores = [
+          '506', 'centro', 'pavas', 'terramall', 
+          'escazu', 'hot', 'desamparados', 'canonazo', 'sabanilla'
+        ];
+        
+        // Array para todas las ventas
+        let allSales = [];
+        
+        // Recorrer tiendas y obtener ventas
+        for (const store of stores) {
+          exportMessage.textContent = `Obteniendo ventas de ${store}...`;
+          const sales = await getSalesFromFirebase(store, startDate, endDate);
+          allSales = [...allSales, ...sales];
+        }
+        
+        if (allSales.length === 0) {
+          showToast('No hay ventas para exportar', 'error');
+          exportStatus.classList.add('hidden');
+          return;
+        }
+        
+        // Generar un solo libro con todas las ventas en una hoja
+        const wb = generateWorkbookForAllStores(allSales);
+        XLSX.writeFile(wb, `Todas_las_ventas.xlsx`);
+        showToast('Exportación completa en un solo archivo', 'success');
+      } catch (error) {
+        showToast(`Error al exportar: ${error.message}`, 'error');
+      } finally {
+        exportStatus.classList.add('hidden');
+      }
+    }
+
+    function generateWorkbookForAllStores(sales) {
+      // Definir categorías para las columnas
+      const categories = [
+        'Articulos', 'Articulos (P)', 'Bisuteria', 'Bisuteria (P)', 
+        'Zapato', 'Zapato (P)', 'Prenda', 'Prenda (P)', 'B.Eco'
+      ];
+      
+      // Crear array de datos para la hoja
+      const excelData = [];
+      
+      // Encabezados
+      const headers = ['Fecha', 'Hora', 'Tienda', 'Método de Pago', ...categories];
+      excelData.push(headers);
+      
+      // Llenar filas
+      sales.forEach(sale => {
+        const dateObj = new Date(sale.timestamp);
+        const date = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
+        let time = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+        
+        // Usar hora manual si existe
+        if (sale.manualTime) {
+          time = sale.manualTime;
+        }
+        
+        // Filas
+        const row = [date, time, sale.store, sale.payment];
+        
+        // Inicializar contadores de categorías
+        const categoryCounts = {};
+        categories.forEach(cat => categoryCounts[cat] = 0);
+        
+        // Contar artículos por categoría
+        sale.items.forEach(item => {
+          if (categoryCounts.hasOwnProperty(item.category)) {
+            categoryCounts[item.category] += item.quantity;
+          }
+        });
+        
+        // Agregar contadores a la fila
+        categories.forEach(cat => {
+          row.push(categoryCounts[cat]);
+        });
+        
+        excelData.push(row);
+      });
+      
+      // Crear libro de Excel
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+      XLSX.utils.book_append_sheet(wb, ws, "Todas las ventas");
+      return wb;
     }
     
     // Función para exportar la tienda actual
@@ -2097,7 +2198,7 @@
         const store = storeSelect.value;
         
         if (!username || !password || !store) {
-          errorMessage.textContent = 'Usuario, contraseña y tienda requeridos';
+          errorMessage.textContent = 'Usuario, contraseńa y tienda requeridos';
           errorMessage.classList.remove('hidden');
           return;
         }
@@ -2195,8 +2296,11 @@
         loadAdminSales();
       });
       
-      // Exportar todas las ventas desde Firebase
+      // Exportar todas las ventas desde Firebase (por tienda)
       adminExportAll.addEventListener('click', exportAllStores);
+      
+      // Exportar todas las ventas en un solo archivo
+      adminExportAllInOne.addEventListener('click', exportAllInOneExcel);
       
       // Cerrar modal de edición
       closeEditModal.addEventListener('click', () => {
